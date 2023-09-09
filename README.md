@@ -12,3 +12,9 @@ trie_match!(
     }
 )
 ```
+
+## Benchmark
+
+```
+cargo bench
+```
