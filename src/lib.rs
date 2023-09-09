@@ -4,11 +4,10 @@ extern crate proc_macro;
 
 use std::collections::HashMap;
 
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{
-    parse_macro_input, ExprLit, ExprMatch, Lit,
-    Pat, PatOr, PatWild, Error, Arm, spanned::Spanned,
+    parse_macro_input, spanned::Spanned, Arm, Error, ExprLit, ExprMatch, Lit, Pat, PatOr, PatWild,
 };
 
 use crate::trie::SparseTrie;
@@ -70,11 +69,23 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
 }
 
 fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
-    let ExprMatch { attrs, expr, arms, .. } = input;
+    let ExprMatch {
+        attrs, expr, arms, ..
+    } = input;
     let mut map = HashMap::new();
     let mut wildcard_idx = None;
     let mut built_arms = vec![];
-    for (i, Arm { attrs, pat, guard, body, .. }) in arms.into_iter().enumerate() {
+    for (
+        i,
+        Arm {
+            attrs,
+            pat,
+            guard,
+            body,
+            ..
+        },
+    ) in arms.into_iter().enumerate()
+    {
         if let Some(attr) = attrs.first() {
             return Err(Error::new(attr.span(), "attribute not supported here"));
         }
@@ -99,7 +110,10 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
         built_arms.push(quote! { #i => #body });
     }
     if wildcard_idx.is_none() {
-        return Err(Error::new(Span::call_site(), "non-exhaustive patterns: `_` not covered"));
+        return Err(Error::new(
+            Span::call_site(),
+            "non-exhaustive patterns: `_` not covered",
+        ));
     }
     let wildcard_idx = wildcard_idx.unwrap();
     let mut trie = SparseTrie::new();
