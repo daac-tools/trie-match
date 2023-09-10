@@ -44,8 +44,8 @@ if x == "a" {
 ```
 
 The above code requires that string comparisons be made from the beginning of
-the string each time. The time complexity becomes *O(mn)*, where *m* is the
-average pattern length, and *n* is the number of patterns.
+the string each time. The time complexity of the above code is *O(mn)*, where
+*m* is the average pattern length, and *n* is the number of patterns.
 
 In contrast, this macro builds the following trie structure to retrieve an
 index of the match arm:
