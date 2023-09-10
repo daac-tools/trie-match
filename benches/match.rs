@@ -245,7 +245,51 @@ fn criterion_word100(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(5));
     group.sampling_mode(SamplingMode::Flat);
 
-    group.bench_function("match", |b| {
+    group.bench_function("match_rand", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in WORDS_100 {
+                match s {
+                    "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
+                    | "avuncular" | "prevailed" | "foreparts" | "legalistically"
+                    | "intermarries" | "desideratum" | "evaluating" | "lavishing"
+                    | "attractable" | "philippics" | "antiabortionist" | "lascivious"
+                    | "breathable" | "histogram" | "rattlings" | "interdict" | "summarized"
+                    | "relieving" | "congresspeople" | "fitfulness" => {
+                        x += 3141;
+                    }
+                    "percolation" | "upperclasswoman" | "epistemic" | "Chantilly"
+                    | "stonemasons" | "nonferrous" | "emulsions" | "charitably" | "barracudas"
+                    | "integrity" | "knockdowns" | "roadworks" | "abortionists" | "Salvadoran"
+                    | "chanceries" | "misinform" | "caretaker" | "extricated" | "mandolins"
+                    | "steeliest" | "transpiration" | "weirdness" | "audiologists"
+                    | "baronetcies" | "performing" => {
+                        x += 5926;
+                    }
+                    "publishing" | "suspending" | "dermatological" | "contemplate"
+                    | "spiritless" | "nightwatchman" | "paradisaical" | "implicating"
+                    | "timpanists" | "Leavenworth" | "amorality" | "strangulated"
+                    | "cellophane" | "waterboard" | "astrophysicists" | "aerospace"
+                    | "passphrase" | "engendered" | "spotlighting" | "misapplication"
+                    | "barterers" | "poetesses" | "dollhouse" | "laparoscopic" | "Dubrovnik" => {
+                        x += 5358;
+                    }
+                    "rerecords" | "shielding" | "orthographically" | "thicknesses"
+                    | "Bendictus" | "congealed" | "cooperative" | "encompass" | "grouching"
+                    | "shipowners" | "jealously" | "generational" | "antecedents"
+                    | "persecutes" | "exemplified" | "admirable" | "squeakiest" | "absconding"
+                    | "extirpated" | "exoskeletons" | "earthworms" | "chaotically"
+                    | "shipbuilder" | "equidistantly" | "overprint" => {
+                        x += 9793;
+                    }
+                    _ => {}
+                }
+            }
+            x
+        });
+    });
+
+    group.bench_function("match_1", |b| {
         b.iter(|| {
             let mut x = 0;
             for &s in WORDS_100 {
@@ -289,7 +333,95 @@ fn criterion_word100(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("trie_match", |b| {
+    group.bench_function("match_0", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in WORDS_100 {
+                match s {
+                    "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
+                    | "avuncular" | "prevailed" | "foreparts" | "legalistically"
+                    | "intermarries" | "desideratum" | "evaluating" | "lavishing"
+                    | "attractable" | "philippics" | "antiabortionist" | "lascivious"
+                    | "breathable" | "histogram" | "rattlings" | "interdict" | "summarized"
+                    | "relieving" | "congresspeople" | "fitfulness" => {
+                        x += 0;
+                    }
+                    "percolation" | "upperclasswoman" | "epistemic" | "Chantilly"
+                    | "stonemasons" | "nonferrous" | "emulsions" | "charitably" | "barracudas"
+                    | "integrity" | "knockdowns" | "roadworks" | "abortionists" | "Salvadoran"
+                    | "chanceries" | "misinform" | "caretaker" | "extricated" | "mandolins"
+                    | "steeliest" | "transpiration" | "weirdness" | "audiologists"
+                    | "baronetcies" | "performing" => {
+                        x += 1;
+                    }
+                    "publishing" | "suspending" | "dermatological" | "contemplate"
+                    | "spiritless" | "nightwatchman" | "paradisaical" | "implicating"
+                    | "timpanists" | "Leavenworth" | "amorality" | "strangulated"
+                    | "cellophane" | "waterboard" | "astrophysicists" | "aerospace"
+                    | "passphrase" | "engendered" | "spotlighting" | "misapplication"
+                    | "barterers" | "poetesses" | "dollhouse" | "laparoscopic" | "Dubrovnik" => {
+                        x += 2;
+                    }
+                    "rerecords" | "shielding" | "orthographically" | "thicknesses"
+                    | "Bendictus" | "congealed" | "cooperative" | "encompass" | "grouching"
+                    | "shipowners" | "jealously" | "generational" | "antecedents"
+                    | "persecutes" | "exemplified" | "admirable" | "squeakiest" | "absconding"
+                    | "extirpated" | "exoskeletons" | "earthworms" | "chaotically"
+                    | "shipbuilder" | "equidistantly" | "overprint" => {
+                        x += 3;
+                    }
+                    _ => {}
+                }
+            }
+            x
+        });
+    });
+
+    group.bench_function("trie_match_rand", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in WORDS_100 {
+                trie_match!(match s {
+                    "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
+                    | "avuncular" | "prevailed" | "foreparts" | "legalistically"
+                    | "intermarries" | "desideratum" | "evaluating" | "lavishing"
+                    | "attractable" | "philippics" | "antiabortionist" | "lascivious"
+                    | "breathable" | "histogram" | "rattlings" | "interdict" | "summarized"
+                    | "relieving" | "congresspeople" | "fitfulness" => {
+                        x += 3141;
+                    }
+                    "percolation" | "upperclasswoman" | "epistemic" | "Chantilly"
+                    | "stonemasons" | "nonferrous" | "emulsions" | "charitably" | "barracudas"
+                    | "integrity" | "knockdowns" | "roadworks" | "abortionists" | "Salvadoran"
+                    | "chanceries" | "misinform" | "caretaker" | "extricated" | "mandolins"
+                    | "steeliest" | "transpiration" | "weirdness" | "audiologists"
+                    | "baronetcies" | "performing" => {
+                        x += 5926;
+                    }
+                    "publishing" | "suspending" | "dermatological" | "contemplate"
+                    | "spiritless" | "nightwatchman" | "paradisaical" | "implicating"
+                    | "timpanists" | "Leavenworth" | "amorality" | "strangulated"
+                    | "cellophane" | "waterboard" | "astrophysicists" | "aerospace"
+                    | "passphrase" | "engendered" | "spotlighting" | "misapplication"
+                    | "barterers" | "poetesses" | "dollhouse" | "laparoscopic" | "Dubrovnik" => {
+                        x += 5358;
+                    }
+                    "rerecords" | "shielding" | "orthographically" | "thicknesses"
+                    | "Bendictus" | "congealed" | "cooperative" | "encompass" | "grouching"
+                    | "shipowners" | "jealously" | "generational" | "antecedents"
+                    | "persecutes" | "exemplified" | "admirable" | "squeakiest" | "absconding"
+                    | "extirpated" | "exoskeletons" | "earthworms" | "chaotically"
+                    | "shipbuilder" | "equidistantly" | "overprint" => {
+                        x += 9793;
+                    }
+                    _ => {}
+                })
+            }
+            x
+        });
+    });
+
+    group.bench_function("trie_match_1", |b| {
         b.iter(|| {
             let mut x = 0;
             for &s in WORDS_100 {
@@ -332,6 +464,50 @@ fn criterion_word100(c: &mut Criterion) {
             x
         });
     });
+    
+    group.bench_function("trie_match_0", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in WORDS_100 {
+                trie_match!(match s {
+                    "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
+                    | "avuncular" | "prevailed" | "foreparts" | "legalistically"
+                    | "intermarries" | "desideratum" | "evaluating" | "lavishing"
+                    | "attractable" | "philippics" | "antiabortionist" | "lascivious"
+                    | "breathable" | "histogram" | "rattlings" | "interdict" | "summarized"
+                    | "relieving" | "congresspeople" | "fitfulness" => {
+                        x += 0;
+                    }
+                    "percolation" | "upperclasswoman" | "epistemic" | "Chantilly"
+                    | "stonemasons" | "nonferrous" | "emulsions" | "charitably" | "barracudas"
+                    | "integrity" | "knockdowns" | "roadworks" | "abortionists" | "Salvadoran"
+                    | "chanceries" | "misinform" | "caretaker" | "extricated" | "mandolins"
+                    | "steeliest" | "transpiration" | "weirdness" | "audiologists"
+                    | "baronetcies" | "performing" => {
+                        x += 1;
+                    }
+                    "publishing" | "suspending" | "dermatological" | "contemplate"
+                    | "spiritless" | "nightwatchman" | "paradisaical" | "implicating"
+                    | "timpanists" | "Leavenworth" | "amorality" | "strangulated"
+                    | "cellophane" | "waterboard" | "astrophysicists" | "aerospace"
+                    | "passphrase" | "engendered" | "spotlighting" | "misapplication"
+                    | "barterers" | "poetesses" | "dollhouse" | "laparoscopic" | "Dubrovnik" => {
+                        x += 2;
+                    }
+                    "rerecords" | "shielding" | "orthographically" | "thicknesses"
+                    | "Bendictus" | "congealed" | "cooperative" | "encompass" | "grouching"
+                    | "shipowners" | "jealously" | "generational" | "antecedents"
+                    | "persecutes" | "exemplified" | "admirable" | "squeakiest" | "absconding"
+                    | "extirpated" | "exoskeletons" | "earthworms" | "chaotically"
+                    | "shipbuilder" | "equidistantly" | "overprint" => {
+                        x += 3;
+                    }
+                    _ => {}
+                })
+            }
+            x
+        });
+    });
 }
 
 fn criterion_html_elements(c: &mut Criterion) {
@@ -341,7 +517,48 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(5));
     group.sampling_mode(SamplingMode::Flat);
 
-    group.bench_function("match", |b| {
+    group.bench_function("match_rand", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in HTML_ELEMENTS {
+                match s {
+                    "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
+                    | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
+                    | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
+                        x += 3141;
+                    }
+                    "portal" | "wbr" | "cite" | "ins" | "footer" | "table" | "address" | "div"
+                    | "optgroup" | "dd" | "samp" | "map" | "xmp" | "embed" | "strong"
+                    | "dialog" | "colgroup" | "input" | "figure" | "body" | "strike" | "audio"
+                    | "marquee" | "noscript" | "form" => {
+                        x += 5926;
+                    }
+                    "nobr" | "font" | "textarea" | "tbody" | "picture" | "legend" | "img"
+                    | "progress" | "meter" | "script" | "dt" | "summary" | "ol" | "acronym"
+                    | "header" | "title" | "span" | "abbr" | "hgroup" | "meta" | "plaintext"
+                    | "base" | "sub" | "select" | "s" => {
+                        x += 5358;
+                    }
+                    "output" | "datalist" | "article" | "param" | "blockquote" | "i" | "tr"
+                    | "html" | "section" | "link" | "small" | "canvas" | "option" | "dir"
+                    | "col" | "noembed" | "rtc" | "big" | "figcaption" | "kbd" | "b" | "u"
+                    | "a" | "td" | "center" => {
+                        x += 9793;
+                    }
+                    "menu" | "template" | "data" | "image" | "fieldset" | "slot" | "q"
+                    | "thead" | "nav" | "style" | "button" | "video" | "dl" | "caption"
+                    | "ruby" | "tt" | "dfn" | "code" | "source" | "h1" | "iframe" | "sup"
+                    | "noframes" | "frameset" | "track" | "frame" | "rt" | "object" => {
+                        x += 2384;
+                    }
+                    _ => {}
+                }
+            }
+            x
+        });
+    });
+
+    group.bench_function("match_1", |b| {
         b.iter(|| {
             let mut x = 0;
             for &s in HTML_ELEMENTS {
@@ -382,7 +599,89 @@ fn criterion_html_elements(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("trie_match", |b| {
+    group.bench_function("match_0", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in HTML_ELEMENTS {
+                match s {
+                    "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
+                    | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
+                    | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
+                        x += 0;
+                    }
+                    "portal" | "wbr" | "cite" | "ins" | "footer" | "table" | "address" | "div"
+                    | "optgroup" | "dd" | "samp" | "map" | "xmp" | "embed" | "strong"
+                    | "dialog" | "colgroup" | "input" | "figure" | "body" | "strike" | "audio"
+                    | "marquee" | "noscript" | "form" => {
+                        x += 1;
+                    }
+                    "nobr" | "font" | "textarea" | "tbody" | "picture" | "legend" | "img"
+                    | "progress" | "meter" | "script" | "dt" | "summary" | "ol" | "acronym"
+                    | "header" | "title" | "span" | "abbr" | "hgroup" | "meta" | "plaintext"
+                    | "base" | "sub" | "select" | "s" => {
+                        x += 2;
+                    }
+                    "output" | "datalist" | "article" | "param" | "blockquote" | "i" | "tr"
+                    | "html" | "section" | "link" | "small" | "canvas" | "option" | "dir"
+                    | "col" | "noembed" | "rtc" | "big" | "figcaption" | "kbd" | "b" | "u"
+                    | "a" | "td" | "center" => {
+                        x += 3;
+                    }
+                    "menu" | "template" | "data" | "image" | "fieldset" | "slot" | "q"
+                    | "thead" | "nav" | "style" | "button" | "video" | "dl" | "caption"
+                    | "ruby" | "tt" | "dfn" | "code" | "source" | "h1" | "iframe" | "sup"
+                    | "noframes" | "frameset" | "track" | "frame" | "rt" | "object" => {
+                        x += 4;
+                    }
+                    _ => {}
+                }
+            }
+            x
+        });
+    });
+
+    group.bench_function("trie_match_rand", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in HTML_ELEMENTS {
+                trie_match!(match s {
+                    "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
+                    | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
+                    | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
+                        x += 3141;
+                    }
+                    "portal" | "wbr" | "cite" | "ins" | "footer" | "table" | "address" | "div"
+                    | "optgroup" | "dd" | "samp" | "map" | "xmp" | "embed" | "strong"
+                    | "dialog" | "colgroup" | "input" | "figure" | "body" | "strike" | "audio"
+                    | "marquee" | "noscript" | "form" => {
+                        x += 5926;
+                    }
+                    "nobr" | "font" | "textarea" | "tbody" | "picture" | "legend" | "img"
+                    | "progress" | "meter" | "script" | "dt" | "summary" | "ol" | "acronym"
+                    | "header" | "title" | "span" | "abbr" | "hgroup" | "meta" | "plaintext"
+                    | "base" | "sub" | "select" | "s" => {
+                        x += 5358;
+                    }
+                    "output" | "datalist" | "article" | "param" | "blockquote" | "i" | "tr"
+                    | "html" | "section" | "link" | "small" | "canvas" | "option" | "dir"
+                    | "col" | "noembed" | "rtc" | "big" | "figcaption" | "kbd" | "b" | "u"
+                    | "a" | "td" | "center" => {
+                        x += 9793;
+                    }
+                    "menu" | "template" | "data" | "image" | "fieldset" | "slot" | "q"
+                    | "thead" | "nav" | "style" | "button" | "video" | "dl" | "caption"
+                    | "ruby" | "tt" | "dfn" | "code" | "source" | "h1" | "iframe" | "sup"
+                    | "noframes" | "frameset" | "track" | "frame" | "rt" | "object" => {
+                        x += 2384;
+                    }
+                    _ => {}
+                })
+            }
+            x
+        });
+    });
+
+    group.bench_function("trie_match_1", |b| {
         b.iter(|| {
             let mut x = 0;
             for &s in HTML_ELEMENTS {
@@ -415,6 +714,47 @@ fn criterion_html_elements(c: &mut Criterion) {
                     | "ruby" | "tt" | "dfn" | "code" | "source" | "h1" | "iframe" | "sup"
                     | "noframes" | "frameset" | "track" | "frame" | "rt" | "object" => {
                         x += 5;
+                    }
+                    _ => {}
+                })
+            }
+            x
+        });
+    });
+
+    group.bench_function("trie_match_0", |b| {
+        b.iter(|| {
+            let mut x = 0;
+            for &s in HTML_ELEMENTS {
+                trie_match!(match s {
+                    "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
+                    | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
+                    | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
+                        x += 0;
+                    }
+                    "portal" | "wbr" | "cite" | "ins" | "footer" | "table" | "address" | "div"
+                    | "optgroup" | "dd" | "samp" | "map" | "xmp" | "embed" | "strong"
+                    | "dialog" | "colgroup" | "input" | "figure" | "body" | "strike" | "audio"
+                    | "marquee" | "noscript" | "form" => {
+                        x += 1;
+                    }
+                    "nobr" | "font" | "textarea" | "tbody" | "picture" | "legend" | "img"
+                    | "progress" | "meter" | "script" | "dt" | "summary" | "ol" | "acronym"
+                    | "header" | "title" | "span" | "abbr" | "hgroup" | "meta" | "plaintext"
+                    | "base" | "sub" | "select" | "s" => {
+                        x += 2;
+                    }
+                    "output" | "datalist" | "article" | "param" | "blockquote" | "i" | "tr"
+                    | "html" | "section" | "link" | "small" | "canvas" | "option" | "dir"
+                    | "col" | "noembed" | "rtc" | "big" | "figcaption" | "kbd" | "b" | "u"
+                    | "a" | "td" | "center" => {
+                        x += 3;
+                    }
+                    "menu" | "template" | "data" | "image" | "fieldset" | "slot" | "q"
+                    | "thead" | "nav" | "style" | "button" | "video" | "dl" | "caption"
+                    | "ruby" | "tt" | "dfn" | "code" | "source" | "h1" | "iframe" | "sup"
+                    | "noframes" | "frameset" | "track" | "frame" | "rt" | "object" => {
+                        x += 4;
                     }
                     _ => {}
                 })
