@@ -1,242 +1,19 @@
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
 use std::time::Duration;
 
+use criterion::{criterion_group, criterion_main, Criterion, SamplingMode};
 use trie_match::trie_match;
 
-use criterion::{criterion_group, criterion_main, Criterion, SamplingMode};
-
-static WORDS_100: &[&str] = &[
-    "stampeding",
-    "commendable",
-    "adrenaline",
-    "exobiology",
-    "indifference",
-    "avuncular",
-    "prevailed",
-    "foreparts",
-    "legalistically",
-    "intermarries",
-    "desideratum",
-    "evaluating",
-    "lavishing",
-    "attractable",
-    "philippics",
-    "antiabortionist",
-    "lascivious",
-    "breathable",
-    "histogram",
-    "rattlings",
-    "interdict",
-    "summarized",
-    "relieving",
-    "congresspeople",
-    "fitfulness",
-    "percolation",
-    "upperclasswoman",
-    "epistemic",
-    "Chantilly",
-    "stonemasons",
-    "nonferrous",
-    "emulsions",
-    "charitably",
-    "barracudas",
-    "integrity",
-    "knockdowns",
-    "roadworks",
-    "abortionists",
-    "Salvadoran",
-    "chanceries",
-    "misinform",
-    "caretaker",
-    "extricated",
-    "mandolins",
-    "steeliest",
-    "transpiration",
-    "weirdness",
-    "audiologists",
-    "baronetcies",
-    "performing",
-    "publishing",
-    "suspending",
-    "dermatological",
-    "contemplate",
-    "spiritless",
-    "nightwatchman",
-    "paradisaical",
-    "implicating",
-    "timpanists",
-    "Leavenworth",
-    "amorality",
-    "strangulated",
-    "cellophane",
-    "waterboard",
-    "astrophysicists",
-    "aerospace",
-    "passphrase",
-    "engendered",
-    "spotlighting",
-    "misapplication",
-    "barterers",
-    "poetesses",
-    "dollhouse",
-    "laparoscopic",
-    "Dubrovnik",
-    "rerecords",
-    "shielding",
-    "orthographically",
-    "thicknesses",
-    "Bendictus",
-    "congealed",
-    "cooperative",
-    "encompass",
-    "grouching",
-    "shipowners",
-    "jealously",
-    "generational",
-    "antecedents",
-    "persecutes",
-    "exemplified",
-    "admirable",
-    "squeakiest",
-    "absconding",
-    "extirpated",
-    "exoskeletons",
-    "earthworms",
-    "chaotically",
-    "shipbuilder",
-    "equidistantly",
-    "overprint",
-];
-
-static HTML_ELEMENTS: &[&str] = &[
-    "tt",
-    "optgroup",
-    "p",
-    "map",
-    "figcaption",
-    "portal",
-    "table",
-    "strike",
-    "colgroup",
-    "style",
-    "meter",
-    "option",
-    "dd",
-    "img",
-    "bdo",
-    "samp",
-    "track",
-    "u",
-    "span",
-    "plaintext",
-    "article",
-    "center",
-    "frameset",
-    "cite",
-    "datalist",
-    "big",
-    "select",
-    "caption",
-    "dialog",
-    "section",
-    "q",
-    "base",
-    "summary",
-    "object",
-    "td",
-    "input",
-    "tbody",
-    "wbr",
-    "dfn",
-    "image",
-    "figure",
-    "output",
-    "head",
-    "iframe",
-    "tfoot",
-    "acronym",
-    "ins",
-    "br",
-    "del",
-    "rt",
-    "noembed",
-    "menu",
-    "search",
-    "main",
-    "small",
-    "param",
-    "tr",
-    "template",
-    "ol",
-    "kbd",
-    "strong",
-    "h1",
-    "slot",
-    "ul",
-    "button",
-    "video",
-    "xmp",
-    "th",
-    "aside",
-    "font",
-    "rp",
-    "data",
-    "dt",
-    "abbr",
-    "pre",
-    "audio",
-    "fieldset",
-    "source",
-    "link",
-    "nav",
-    "meta",
-    "blockquote",
-    "picture",
-    "form",
-    "bdi",
-    "a",
-    "textarea",
-    "s",
-    "canvas",
-    "mark",
-    "menuitem",
-    "li",
-    "noscript",
-    "code",
-    "area",
-    "rb",
-    "b",
-    "details",
-    "label",
-    "progress",
-    "sup",
-    "title",
-    "html",
-    "em",
-    "i",
-    "embed",
-    "nobr",
-    "div",
-    "time",
-    "rtc",
-    "frame",
-    "dl",
-    "address",
-    "noframes",
-    "footer",
-    "sub",
-    "var",
-    "col",
-    "dir",
-    "header",
-    "legend",
-    "hgroup",
-    "marquee",
-    "hr",
-    "thead",
-    "body",
-    "script",
-    "ruby",
-];
+fn load_input(path: impl AsRef<Path>) -> Vec<String> {
+    let mut result = vec![];
+    let file = BufReader::new(File::open(path.as_ref()).unwrap());
+    for line in file.lines() {
+        result.push(line.unwrap());
+    }
+    result
+}
 
 fn criterion_word100(c: &mut Criterion) {
     let mut group = c.benchmark_group("words_100");
@@ -245,11 +22,13 @@ fn criterion_word100(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(5));
     group.sampling_mode(SamplingMode::Flat);
 
+    let word_100 = load_input("benches/input_word_100.txt");
+
     group.bench_function("match_rand", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in WORDS_100 {
-                match s {
+            for s in &word_100 {
+                match s.as_str() {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
                     | "intermarries" | "desideratum" | "evaluating" | "lavishing"
@@ -292,8 +71,8 @@ fn criterion_word100(c: &mut Criterion) {
     group.bench_function("match_1", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in WORDS_100 {
-                match s {
+            for s in &word_100 {
+                match s.as_str() {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
                     | "intermarries" | "desideratum" | "evaluating" | "lavishing"
@@ -336,8 +115,8 @@ fn criterion_word100(c: &mut Criterion) {
     group.bench_function("match_0", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in WORDS_100 {
-                match s {
+            for s in &word_100 {
+                match s.as_str() {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
                     | "intermarries" | "desideratum" | "evaluating" | "lavishing"
@@ -380,7 +159,7 @@ fn criterion_word100(c: &mut Criterion) {
     group.bench_function("trie_match_rand", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in WORDS_100 {
+            for s in &word_100 {
                 trie_match!(match s {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
@@ -424,7 +203,7 @@ fn criterion_word100(c: &mut Criterion) {
     group.bench_function("trie_match_1", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in WORDS_100 {
+            for s in &word_100 {
                 trie_match!(match s {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
@@ -468,7 +247,7 @@ fn criterion_word100(c: &mut Criterion) {
     group.bench_function("trie_match_0", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in WORDS_100 {
+            for s in &word_100 {
                 trie_match!(match s {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
@@ -517,11 +296,13 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(5));
     group.sampling_mode(SamplingMode::Flat);
 
+    let html_elements = load_input("benches/input_html_elements.txt");
+
     group.bench_function("match_rand", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in HTML_ELEMENTS {
-                match s {
+            for s in &html_elements {
+                match s.as_str() {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
                     | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
@@ -561,8 +342,8 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.bench_function("match_1", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in HTML_ELEMENTS {
-                match s {
+            for s in &html_elements {
+                match s.as_str() {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
                     | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
@@ -602,8 +383,8 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.bench_function("match_0", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in HTML_ELEMENTS {
-                match s {
+            for s in &html_elements {
+                match s.as_str() {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
                     | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
@@ -643,7 +424,7 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.bench_function("trie_match_rand", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in HTML_ELEMENTS {
+            for s in &html_elements {
                 trie_match!(match s {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
@@ -684,7 +465,7 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.bench_function("trie_match_1", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in HTML_ELEMENTS {
+            for s in &html_elements {
                 trie_match!(match s {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
@@ -725,7 +506,7 @@ fn criterion_html_elements(c: &mut Criterion) {
     group.bench_function("trie_match_0", |b| {
         b.iter(|| {
             let mut x = 0;
-            for &s in HTML_ELEMENTS {
+            for s in &html_elements {
                 trie_match!(match s {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
