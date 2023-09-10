@@ -66,6 +66,10 @@ The followings are different from the normal `match` expression:
 * Attributes for match arms are unavailable.
 * Guards are unavailable.
 
+Sometimes the normal `match` expression is faster, depending on how
+optimization is performed, so it is better to choose based on your speed
+experiments.
+
 ## Benchmark
 
 Run the following command:
