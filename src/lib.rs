@@ -129,8 +129,8 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     Ok(quote! {
         #( #attr )*
         match (|query: &str| unsafe {
-            let bases = &[ #( #base, )* ];
-            let out_checks = &[ #( #out_check, )* ];
+            let bases: &'static [i32] = &[ #( #base, )* ];
+            let out_checks: &'static [u32] = &[ #( #out_check, )* ];
             let mut pos = 0;
             for &b in query.as_bytes() {
                 let base = *bases.get_unchecked(pos);
