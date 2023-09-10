@@ -26,8 +26,8 @@ trie_match! {
 
 ## Why is it faster?
 
-In a normal `match` expression, the slices are compared for each pattern,
-starting from the top. It is equivalent to the following code:
+In a normal `match` expression, the string is compared for each pattern. It is
+equivalent to the following code:
 
 ```rust
 if x == "a" {
