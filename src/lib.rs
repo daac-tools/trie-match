@@ -1,3 +1,38 @@
+//! # `trie_match! {}`
+//!
+//! This macro uses a compact double array trie for Rust's `match` expression to
+//! speed up conditional branching by strings.
+//!
+//! ## Usage
+//!
+//! Simply wrap the existing match expression with the `trie_match! {}` macro as
+//! follows:
+//!
+//! ```
+//! use trie_match::trie_match;
+//!
+//! let x = "abd";
+//!
+//! trie_match! {
+//!     match x {
+//!         "a" => { println!("x"); }
+//!         "abc" => { println!("y"); }
+//!         "abd" | "bcc" => { println!("z"); }
+//!         "bc" => { println!("w"); }
+//!         _ => { println!(" "); }
+//!     }
+//! }
+//! ```
+//!
+//! ## Limitations
+//!
+//! The followings are different from the normal `match` expression:
+//!
+//! * The wildcard is evaluated last. (The normal `match` expression does not
+//!   match patterns after the wildcard.)
+//! * Pattern bindings are unavailable.
+//! * Attributes for match arms are unavailable.
+//! * Guards are unavailable.
 mod trie;
 
 extern crate proc_macro;
@@ -155,6 +190,25 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     })
 }
 
+/// Generates a match expression that uses a trie structure.
+///
+/// # Examples
+///
+/// ```
+/// use trie_match::trie_match;
+///
+/// let x = "abd";
+///
+/// trie_match! {
+///     match x {
+///         "a" => { println!("x"); }
+///         "abc" => { println!("y"); }
+///         "abd" | "bcc" => { println!("z"); }
+///         "bc" => { println!("w"); }
+///         _ => { println!(" "); }
+///     }
+/// }
+/// ```
 #[proc_macro]
 pub fn trie_match(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as ExprMatch);

@@ -11,13 +11,15 @@ follows:
 ```rust
 use trie_match::trie_match;
 
+let x = "abd";
+
 trie_match! {
     match x {
-        "a" => { .. }
-        "abc" => { .. }
-        "abd" | "bcc" => { .. }
-        "bc" => { .. }
-        _ => { .. }
+        "a" => { println!("x"); }
+        "abc" => { println!("y"); }
+        "abd" | "bcc" => { println!("z"); }
+        "bc" => { println!("w"); }
+        _ => { println!(" "); }
     }
 }
 ```
@@ -42,7 +44,7 @@ if x == "a" {
 ```
 
 The above code requires that string comparisons be made from the beginning of
-the string each time. The time complexity becomes *O(mn)*, where `m` is the
+the string each time. The time complexity becomes *O(mn)*, where *m* is the
 average pattern length, and *n* is the number of patterns.
 
 In contrast, this macro builds the following trie structure to retrieve an
