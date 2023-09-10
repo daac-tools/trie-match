@@ -464,7 +464,7 @@ fn criterion_word100(c: &mut Criterion) {
             x
         });
     });
-    
+
     group.bench_function("trie_match_0", |b| {
         b.iter(|| {
             let mut x = 0;
