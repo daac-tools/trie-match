@@ -1,11 +1,11 @@
 # `trie_match! {}`
 
-This macro uses a compact double array trie for Rust's `match` expression to
-speed up conditional branching by strings.
+This macro speeds up Rust's `match` expression by using a compact double-array
+data structure.
 
 ## Usage
 
-Simply wrap the existing match expression with the `trie_match! {}` macro as
+Simply wrap the existing `match` expression with the `trie_match! {}` macro as
 follows:
 
 ```rust
@@ -47,8 +47,8 @@ The above code requires that string comparisons be made from the beginning of
 the string each time. The time complexity of the above code is *O(mn)*, where
 *m* is the average pattern length, and *n* is the number of patterns.
 
-In contrast, this macro builds the following trie structure to retrieve an
-index of the match arm:
+In contrast, this macro builds the following trie structure to retrieve the
+index of the matched arm:
 
 ![Trie](figures/graph.svg)
 

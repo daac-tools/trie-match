@@ -170,12 +170,12 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
             for &b in query.as_bytes() {
                 let base = *bases.get_unchecked(pos);
                 pos = (base + i32::from(b)) as usize;
-                let Some(out_check) = out_checks.get(pos) else {
-                    return #wildcard_idx;
-                };
-                if out_check & 0xff != u32::from(b) {
-                    return #wildcard_idx;
+                if let Some(out_check) = out_checks.get(pos) {
+                    if out_check & 0xff == u32::from(b) {
+                        continue;
+                    }
                 }
+                return #wildcard_idx;
             }
             let out = *out_checks.get_unchecked(pos) >> 8;
             if out != 0xffffff {
