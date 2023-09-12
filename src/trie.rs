@@ -6,11 +6,11 @@ struct State {
     value: Option<u32>,
 }
 
-pub struct SparseTrie {
+pub struct Sparse {
     states: Vec<State>,
 }
 
-impl SparseTrie {
+impl Sparse {
     pub fn new() -> Self {
         Self {
             states: vec![State::default()],
@@ -27,9 +27,7 @@ impl SparseTrie {
                 self.states.push(State::default());
             }
         }
-        if self.states[state_idx].value.replace(value).is_some() {
-            panic!("dup pattern")
-        }
+        self.states[state_idx].value = Some(value);
     }
 
     fn find_base(
@@ -38,9 +36,7 @@ impl SparseTrie {
         state: &State,
         used_bases: &HashSet<i32>,
     ) -> Option<i32> {
-        let Some((&k, _)) = state.edges.first_key_value() else {
-            return None;
-        };
+        let (&k, _) = state.edges.iter().next()?;
         let mut base_cand = search_start - i32::from(k);
         'a: loop {
             if used_bases.contains(&base_cand) {
@@ -73,7 +69,7 @@ impl SparseTrie {
             if let Some(val) = state.value {
                 out_checks[da_pos] &= val << 8 | 0xff;
             }
-            for &u in &is_used[search_start as usize..] {
+            for &u in &is_used[usize::try_from(search_start).unwrap()..] {
                 if !u {
                     break;
                 }

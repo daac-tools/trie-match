@@ -45,7 +45,7 @@ use syn::{
     parse_macro_input, spanned::Spanned, Arm, Error, ExprLit, ExprMatch, Lit, Pat, PatOr, PatWild,
 };
 
-use crate::trie::SparseTrie;
+use crate::trie::Sparse;
 
 fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
     let mut pats = vec![];
@@ -67,7 +67,7 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
             if let Some(attr) = attrs.first() {
                 return Err(Error::new(attr.span(), "attribute not supported here"));
             }
-            for pat in cases.iter() {
+            for pat in cases {
                 match pat {
                     Pat::Lit(ExprLit {
                         lit: Lit::Str(s),
@@ -151,7 +151,7 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
         ));
     }
     let wildcard_idx = wildcard_idx.unwrap();
-    let mut trie = SparseTrie::new();
+    let mut trie = Sparse::new();
     for (k, v) in map {
         trie.add(k, v);
     }

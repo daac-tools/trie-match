@@ -1,0 +1,50 @@
+name: build
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Check on ${{ matrix.rust }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.60.0 # MSRV
+          - stable
+          - nightly
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install ${{ matrix.rust }}
+        run: |
+          rustup toolchain install ${{ matrix.rust }} --profile minimal --component rustfmt,clippy
+          rustup default ${{ matrix.rust }}
+
+      - name: Run cargo check
+        continue-on-error: ${{ matrix.rust == 'nightly' }}
+        run: cargo check
+
+      - name: Run cargo fmt
+        continue-on-error: ${{ matrix.rust == 'nightly' }}
+        run: cargo fmt -- --check
+
+      - name: Run cargo clippy
+        # Run clippy only on stable to ignore unreasonable old warnings.
+        continue-on-error: ${{ matrix.rust != 'stable' }}
+        run: cargo clippy -- -D warnings -W clippy::nursery -W clippy::pedantic
+
+      - name: Run cargo test
+        continue-on-error: ${{ matrix.rust == 'nightly' }}
+        run: cargo test
