@@ -2,17 +2,29 @@
 name = "trie-match"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.60"
+authors = [
+    "Koichi Akabe <vbkaisetsu@gmail.com>",
+]
+description = "Fast match macro"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/daac-tools/trie-match"
+repository = "https://github.com/daac-tools/trie-match"
+readme = "README.md"
+keywords = ["match", "text", "double-array", "macro"]
+categories = ["text-processing", "algorithms", "data-structures", "no-std::no-alloc"]
+exclude = [".*"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2", features = ["full", "extra-traits"] }
-proc-macro2 = "1"
-quote = "1"
+syn = { version = "2.0", features = ["full", "extra-traits"] } # MIT or Apache-2.0
+proc-macro2 = "1.0" # MIT or Apache-2.0
+quote = "1.0" # MIT or Apache-2.0
 
 [dev-dependencies]
-criterion = { version = "0.4.0", features = ["html_reports"] }  # Apache-2.0 or MIT
+criterion = { version = "0.4.0", features = ["html_reports"] } # MIT or Apache-2.0
 
 [[bench]]
 name = "match"
