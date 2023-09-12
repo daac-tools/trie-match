@@ -45,6 +45,7 @@ fn test_match_wildcard() {
     );
 }
 
+// Issue: https://github.com/daac-tools/trie-match/pull/4
 #[test]
 fn test_match_only_wildcard() {
     let text = "ba";
