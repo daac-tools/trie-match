@@ -78,6 +78,22 @@ Run the following command:
 cargo bench
 ```
 
+Experimental results are as follows [μs]:
+
+* AMD Ryzen 7 5700U with Radeon Graphics
+
+  | Bench name           | Normal match | Trie match |
+  |----------------------|--------------|------------|
+  | 100 words random     |         1.97 |   **1.01** |
+  | HTML elements random |         2.20 |   **0.55** |
+
+* 12th Gen Intel(R) Core(TM) i7-1270P
+
+  | Bench name           | Normal match | Trie match |
+  |----------------------|--------------|------------|
+  | 100 words random     |         1.63 |   **0.84** |
+  | HTML elements random |         1.64 |   **0.48** |
+
 ## License
 
 Licensed under either of
@@ -88,3 +104,7 @@ Licensed under either of
    ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
+
+## Contribution
+
+See [the guidelines](./CONTRIBUTING.md).
