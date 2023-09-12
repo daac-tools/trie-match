@@ -1,5 +1,11 @@
 # `trie_match! {}`
 
+[![Crates.io](https://img.shields.io/crates/v/trie-match)](https://crates.io/crates/trie-match)
+[![Documentation](https://docs.rs/trie-match/badge.svg)](https://docs.rs/trie-match)
+[![Rust](https://img.shields.io/badge/rust-1.60%2B-blue.svg?maxAge=3600)](https://github.com/daac-tools/trie-match)
+[![Build Status](https://github.com/daac-tools/trie-match/actions/workflows/rust.yml/badge.svg)](https://github.com/daac-tools/trie-match/actions)
+[![Slack](https://img.shields.io/badge/join-chat-brightgreen?logo=slack)](https://join.slack.com/t/daac-tools/shared_invite/zt-1pwwqbcz4-KxL95Nam9VinpPlzUpEGyA)
+
 This macro speeds up Rust's `match` expression by using a compact double-array
 data structure.
 
