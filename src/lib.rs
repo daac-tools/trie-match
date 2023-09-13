@@ -1,7 +1,7 @@
 //! # `trie_match! {}`
 //!
-//! This macro uses a compact double array trie for Rust's `match` expression to
-//! speed up conditional branching by strings.
+//! This macro speeds up Rust's `match` expression for comparing strings by using a compact
+//! double-array data structure.
 //!
 //! ## Usage
 //!
@@ -28,6 +28,7 @@
 //!
 //! The followings are different from the normal `match` expression:
 //!
+//! * Only supports string comparison.
 //! * The wildcard is evaluated last. (The normal `match` expression does not
 //!   match patterns after the wildcard.)
 //! * Pattern bindings are unavailable.

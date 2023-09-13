@@ -6,7 +6,8 @@
 [![Build Status](https://github.com/daac-tools/trie-match/actions/workflows/rust.yml/badge.svg)](https://github.com/daac-tools/trie-match/actions)
 [![Slack](https://img.shields.io/badge/join-chat-brightgreen?logo=slack)](https://join.slack.com/t/daac-tools/shared_invite/zt-1pwwqbcz4-KxL95Nam9VinpPlzUpEGyA)
 
-This macro speeds up Rust's `match` expression when it compares strings.
+This macro speeds up Rust's `match` expression for comparing strings by using a
+compact double-array data structure.
 
 ## Usage
 
@@ -65,6 +66,7 @@ to achieve efficient state-to-state traversal, and the time complexity becomes
 
 The followings are different from the normal `match` expression:
 
+* Only supports string comparison.
 * The wildcard is evaluated last. (The normal `match` expression does not
   match patterns after the wildcard.)
 * Pattern bindings are unavailable.
