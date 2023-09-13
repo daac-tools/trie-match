@@ -1,7 +1,7 @@
 //! # `trie_match! {}`
 //!
-//! This macro speeds up a `match` expression comparing strings by the compact double-array data
-//! structure.
+//! This macro speeds up Rust's `match` expression for comparing strings by using a compact
+//! double-array data structure.
 //!
 //! ## Usage
 //!
