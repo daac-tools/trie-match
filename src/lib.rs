@@ -169,7 +169,7 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
             let mut pos = 0;
             for &b in query.as_bytes() {
                 let base = *bases.get_unchecked(pos);
-                pos = (base + i32::from(b)) as usize;
+                pos = base.wrapping_add(i32::from(b)) as usize;
                 if let Some(out_check) = out_checks.get(pos) {
                     if out_check & 0xff == u32::from(b) {
                         continue;
