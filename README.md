@@ -65,6 +65,7 @@ to achieve efficient state-to-state traversal, and the time complexity becomes
 
 The followings are different from the normal `match` expression:
 
+* Only supports string comparison.
 * The wildcard is evaluated last. (The normal `match` expression does not
   match patterns after the wildcard.)
 * Pattern bindings are unavailable.
