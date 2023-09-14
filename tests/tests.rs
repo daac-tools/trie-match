@@ -2,9 +2,11 @@ use trie_match::trie_match;
 
 #[test]
 fn test_only_wildcard() {
-    let f = |text| trie_match! {
-        match text {
-            _ => 4,
+    let f = |text| {
+        trie_match! {
+            match text {
+                _ => 4,
+            }
         }
     };
     assert_eq!(f(""), 4);
@@ -15,13 +17,15 @@ fn test_only_wildcard() {
 #[test]
 fn test_prefix_patterns() {
     // 0 -a-> 1 -b-> 2 -c-> * -d-> 3
-    let f = |text| trie_match! {
-        match text {
-            "" => 0,
-            "a" => 1,
-            "ab" => 2,
-            "abcd" => 3,
-            _ => 4,
+    let f = |text| {
+        trie_match! {
+            match text {
+                "" => 0,
+                "a" => 1,
+                "ab" => 2,
+                "abcd" => 3,
+                _ => 4,
+            }
         }
     };
     assert_eq!(f(""), 0);
@@ -35,10 +39,12 @@ fn test_prefix_patterns() {
 #[test]
 fn test_longer_query() {
     // * -a-> * -b-> 0
-    let f = |text| trie_match! {
-        match text {
-            "ab" => 0,
-            _ => 1,
+    let f = |text| {
+        trie_match! {
+            match text {
+                "ab" => 0,
+                _ => 1,
+            }
         }
     };
     assert_eq!(f("ab"), 0);
@@ -50,11 +56,13 @@ fn test_branch_root() {
     // * -a-> 0
     //  \
     //   \-b-> 1
-    let f = |text| trie_match! {
-        match text {
-            "a" => 0,
-            "b" => 1,
-            _ => 2,
+    let f = |text| {
+        trie_match! {
+            match text {
+                "a" => 0,
+                "b" => 1,
+                _ => 2,
+            }
         }
     };
     assert_eq!(f("a"), 0);
@@ -69,15 +77,17 @@ fn test_branch_multiple_times() {
     // * --a--> 0 --b--> * --c--> * --d--> 1
     //  \        \        \
     //   \-b-> 2  \-c-> 3  \-d-> * --e--> 4
-    let f = |text| trie_match! {
-        match text {
-            "a" => 0,
-            "abcd" => 1,
-            "b" => 2,
-            "ac" => 3,
-            "abde" => 4,
-            "abe" => 5,
-            _ => 6,
+    let f = |text| {
+        trie_match! {
+            match text {
+                "a" => 0,
+                "abcd" => 1,
+                "b" => 2,
+                "ac" => 3,
+                "abde" => 4,
+                "abe" => 5,
+                _ => 6,
+            }
         }
     };
     assert_eq!(f(""), 6);
@@ -101,12 +111,14 @@ fn test_branch_multiple_times() {
 // This test confirms that the generator prevents base value conflictions.
 #[test]
 fn test_try_base_conflict() {
-    let f = |text| trie_match! {
-        match text {
-            // The following pattern adds multiple zeros into a base array in a normal
-            // double-array, but it is not allowed in a compact double-array.
-            "\u{1}\u{2}\u{3}" => 0,
-            _ => 1,
+    let f = |text| {
+        trie_match! {
+            match text {
+                // The following pattern adds multiple zeros into a base array in a normal
+                // double-array, but it is not allowed in a compact double-array.
+                "\u{1}\u{2}\u{3}" => 0,
+                _ => 1,
+            }
         }
     };
     assert_eq!(f("\u{1}\u{2}\u{3}"), 0);
