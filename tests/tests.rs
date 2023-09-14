@@ -98,11 +98,13 @@ fn test_branch_multiple_times() {
     assert_eq!(f("c"), 6);
 }
 
-// This test confirms that the "compact" double-array prevents base value conflictions.
+// This test confirms that the generator prevents base value conflictions.
 #[test]
 fn test_try_base_conflict() {
     let f = |text| trie_match! {
         match text {
+            // The following pattern adds multiple zeros into a base array in a normal
+            // double-array, but it is not allowed in a compact double-array.
             "\u{1}\u{2}\u{3}" => 0,
             _ => 1,
         }
