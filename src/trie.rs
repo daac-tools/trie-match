@@ -68,7 +68,7 @@ impl Sparse {
     ///
     /// # Returns
     ///
-    /// The first item is a base array, and the second item is out_check array.
+    /// The first item is a `base` array, and the second item is `out_check` array.
     pub fn build_double_array_trie(&self, wildcard_idx: u32) -> (Vec<i32>, Vec<u32>) {
         let mut bases = vec![i32::MAX];
         let mut out_checks = vec![wildcard_idx << 8];
