@@ -156,10 +156,14 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     for (k, v) in map {
         trie.add(k, v);
     }
-    let (bases, out_checks) = trie.build_double_array_trie();
+    let (bases, out_checks, tails) = trie.build_double_array_trie(wildcard_idx);
 
     let base = bases.iter();
     let out_check = out_checks.iter();
+    let tail = tails.iter().map(|v| {
+        let it = v.iter();
+        quote!( &[ #( #it, )* ] )
+    });
     let arm = built_arms.iter();
     let attr = attrs.iter();
     Ok(quote! {
@@ -167,26 +171,31 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
         match (|query: &str| unsafe {
             let bases: &'static [i32] = &[ #( #base, )* ];
             let out_checks: &'static [u32] = &[ #( #out_check, )* ];
+            let tails: &'static [&'static [u8]] = &[ #( #tail, )* ];
             let mut pos = 0;
-            for &b in query.as_bytes() {
+            for (i, &b) in query.as_bytes().iter().enumerate() {
                 let base = *bases.get_unchecked(pos);
-                pos = base.wrapping_add(i32::from(b)) as usize;
-                if let Some(out_check) = out_checks.get(pos) {
-                    if out_check & 0xff == u32::from(b) {
-                        continue;
-                    }
+                let new_pos = base.wrapping_add(i32::from(b)) as usize;
+                let Some(out_check) = out_checks.get(new_pos) else {
+                    return if query.get_unchecked(i..).as_bytes() == *tails.get_unchecked(pos) {
+                        *out_checks.get_unchecked(pos) >> 8
+                    } else {
+                        #wildcard_idx
+                    };
+                };
+                if out_check & 0xff != u32::from(b) {
+                    return #wildcard_idx;
                 }
-                return #wildcard_idx;
+                pos = new_pos;
             }
-            let out = *out_checks.get_unchecked(pos) >> 8;
-            if out != 0xffffff {
-                out
+            if tails.get_unchecked(pos).is_empty() {
+                *out_checks.get_unchecked(pos) >> 8
             } else {
                 #wildcard_idx
             }
         })( #expr ) {
             #( #arm, )*
-            _ => unreachable!(),
+            _ => unsafe { std::hint::unreachable_unchecked() },
         }
     })
 }
