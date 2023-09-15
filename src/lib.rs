@@ -184,6 +184,9 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
             *out_checks.get_unchecked(pos) >> 8
         })( #expr ) {
             #( #arm, )*
+            // Safety: A query always matches one of the patterns because
+            // all patterns in the input match's AST are expanded. (Even
+            // mismatched cases are always captured by wildcard_idx.)
             _ => unsafe { std::hint::unreachable_unchecked() },
         }
     })
