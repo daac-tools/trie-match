@@ -41,9 +41,10 @@ extern crate proc_macro;
 use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input, spanned::Spanned, Arm, Error, ExprLit, ExprMatch, Lit, Pat, PatOr, PatWild,
+    parse_macro_input, spanned::Spanned, Arm, Error, Expr, ExprLit, ExprMatch, Lit, Pat, PatOr,
+    PatWild,
 };
 
 use crate::trie::Sparse;
@@ -107,13 +108,16 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
     Ok(pats)
 }
 
-fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
-    let ExprMatch {
-        attrs, expr, arms, ..
-    } = input;
-    let mut map = HashMap::new();
+struct MatchInfo {
+    bodies: Vec<Box<Expr>>,
+    pattern_map: HashMap<String, usize>,
+    wildcard_idx: usize,
+}
+
+fn parse_match_arms(arms: &[Arm]) -> Result<MatchInfo, Error> {
+    let mut pattern_map = HashMap::new();
     let mut wildcard_idx = None;
-    let mut built_arms = vec![];
+    let mut bodies = vec![];
     for (
         i,
         Arm {
@@ -132,13 +136,12 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
             return Err(Error::new(if_token.span(), "match guard not supported"));
         }
         let pat_strs = retrieve_match_patterns(&pat)?;
-        let i = u32::try_from(i).unwrap();
         for pat_str in pat_strs {
             if let Some(pat_str) = pat_str {
-                if map.contains_key(&pat_str) {
+                if pattern_map.contains_key(&pat_str) {
                     return Err(Error::new(pat.span(), "unreachable pattern"));
                 }
-                map.insert(pat_str, i);
+                pattern_map.insert(pat_str, i);
             } else {
                 if wildcard_idx.is_some() {
                     return Err(Error::new(pat.span(), "unreachable pattern"));
@@ -146,48 +149,79 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
                 wildcard_idx.replace(i);
             }
         }
-        built_arms.push(quote! { #i => #body });
+        bodies.push(body.clone());
     }
-    if wildcard_idx.is_none() {
+    let Some(wildcard_idx) = wildcard_idx else {
         return Err(Error::new(
             Span::call_site(),
             "non-exhaustive patterns: `_` not covered",
         ));
-    }
-    let wildcard_idx = wildcard_idx.unwrap();
+    };
+    Ok(MatchInfo {
+        bodies,
+        pattern_map,
+        wildcard_idx,
+    })
+}
+
+fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
+    let ExprMatch {
+        attrs, expr, arms, ..
+    } = input;
+
+    let MatchInfo {
+        bodies,
+        pattern_map,
+        wildcard_idx,
+    } = parse_match_arms(&arms)?;
+
     let mut trie = Sparse::new();
-    for (k, v) in map {
+    for (k, v) in pattern_map {
+        if v == wildcard_idx {
+            continue;
+        }
         trie.add(k, v);
     }
-    let (bases, out_checks) = trie.build_double_array_trie(wildcard_idx);
+    let (bases, checks, outs) = trie.build_double_array_trie(wildcard_idx);
 
     let base = bases.iter();
-    let out_check = out_checks.iter();
-    let arm = built_arms.iter();
+    let out_check = outs.iter().zip(checks).map(|(out, check)| {
+        let out = format_ident!("V{out}");
+        quote! { (__TrieMatchValue::#out, #check) }
+    });
+    let arm = bodies.iter().enumerate().map(|(i, body)| {
+        let i = format_ident!("V{i}");
+        quote! { __TrieMatchValue::#i => #body }
+    });
     let attr = attrs.iter();
+    let enumvalue = (0..bodies.len()).map(|i| format_ident!("V{i}"));
+    let wildcard_ident = format_ident!("V{wildcard_idx}");
     Ok(quote! {
-        #( #attr )*
-        match (|query: &str| unsafe {
-            let bases: &'static [i32] = &[ #( #base, )* ];
-            let out_checks: &'static [u32] = &[ #( #out_check, )* ];
-            let mut pos = 0;
-            for &b in query.as_bytes() {
-                let base = *bases.get_unchecked(pos);
-                pos = base.wrapping_add(i32::from(b)) as usize;
-                if let Some(out_check) = out_checks.get(pos) {
-                    if out_check & 0xff == u32::from(b) {
-                        continue;
-                    }
-                }
-                return #wildcard_idx;
+        {
+            #[derive(Clone, Copy)]
+            enum __TrieMatchValue {
+                #( #enumvalue, )*
             }
-            *out_checks.get_unchecked(pos) >> 8
-        })( #expr ) {
-            #( #arm, )*
-            // Safety: A query always matches one of the patterns because
-            // all patterns in the input match's AST are expanded. (Even
-            // mismatched cases are always captured by wildcard_idx.)
-            _ => unsafe { std::hint::unreachable_unchecked() },
+            #( #attr )*
+            match (|query: &str| unsafe {
+                let bases: &'static [i32] = &[ #( #base, )* ];
+                let out_checks: &'static [(__TrieMatchValue, u8)] = &[ #( #out_check, )* ];
+                let mut pos = 0;
+                let mut base = bases[0];
+                for &b in query.as_bytes() {
+                    pos = base.wrapping_add(i32::from(b)) as usize;
+                    if let Some((_, check)) = out_checks.get(pos) {
+                        if *check == b {
+                            base = *bases.get_unchecked(pos);
+                            continue;
+                        }
+                    }
+                    return __TrieMatchValue::#wildcard_ident;
+                }
+                out_checks.get_unchecked(pos).0
+            })( #expr ) {
+                #( #arm, )*
+            }
         }
     })
 }

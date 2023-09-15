@@ -1,17 +1,26 @@
 use std::collections::{BTreeMap, HashSet};
 
-#[derive(Default, Debug)]
-struct State {
+#[derive(Debug)]
+struct State<T> {
     edges: BTreeMap<u8, usize>,
-    value: Option<u32>,
+    value: Option<T>,
+}
+
+impl<T> Default for State<T> {
+    fn default() -> Self {
+        Self {
+            edges: BTreeMap::default(),
+            value: None,
+        }
+    }
 }
 
 /// Sparse trie.
-pub struct Sparse {
-    states: Vec<State>,
+pub struct Sparse<T> {
+    states: Vec<State<T>>,
 }
 
-impl Sparse {
+impl<T> Sparse<T> {
     pub fn new() -> Self {
         Self {
             states: vec![State::default()],
@@ -19,7 +28,7 @@ impl Sparse {
     }
 
     /// Adds a new pattern.
-    pub fn add(&mut self, pattern: impl AsRef<[u8]>, value: u32) {
+    pub fn add(&mut self, pattern: impl AsRef<[u8]>, value: T) {
         let pattern = pattern.as_ref();
         let mut state_idx = 0;
         for &b in pattern {
@@ -35,7 +44,7 @@ impl Sparse {
     fn find_base(
         search_start: i32,
         is_used: &[bool],
-        state: &State,
+        state: &State<T>,
         used_bases: &HashSet<i32>,
     ) -> Option<i32> {
         let (&k, _) = state.edges.iter().next()?;
@@ -69,9 +78,13 @@ impl Sparse {
     /// # Returns
     ///
     /// The first item is a `base` array, and the second item is `out_check` array.
-    pub fn build_double_array_trie(&self, wildcard_idx: u32) -> (Vec<i32>, Vec<u32>) {
+    pub fn build_double_array_trie(&self, wildcard_value: T) -> (Vec<i32>, Vec<u8>, Vec<T>)
+    where
+        T: Copy,
+    {
         let mut bases = vec![i32::MAX];
-        let mut out_checks = vec![wildcard_idx << 8];
+        let mut outs = vec![wildcard_value];
+        let mut checks = vec![0];
         let mut is_used = vec![true];
         let mut stack = vec![(0, 0)];
         let mut used_bases = HashSet::new();
@@ -79,8 +92,7 @@ impl Sparse {
         while let Some((state_id, da_pos)) = stack.pop() {
             let state = &self.states[state_id];
             if let Some(val) = state.value {
-                let check = out_checks[da_pos] & 0xff;
-                out_checks[da_pos] = val << 8 | check;
+                outs[da_pos] = val;
             }
             for &u in &is_used[usize::try_from(search_start).unwrap()..] {
                 if !u {
@@ -95,15 +107,16 @@ impl Sparse {
                     let child_da_pos = usize::try_from(base + i32::from(k)).unwrap();
                     if child_da_pos >= bases.len() {
                         bases.resize(child_da_pos + 1, i32::MAX);
-                        out_checks.resize(child_da_pos + 1, wildcard_idx << 8);
+                        checks.resize(child_da_pos + 1, 0);
+                        outs.resize(child_da_pos + 1, wildcard_value);
                         is_used.resize(child_da_pos + 1, false);
                     }
-                    out_checks[child_da_pos] = wildcard_idx << 8 | u32::from(k);
+                    checks[child_da_pos] = k;
                     is_used[child_da_pos] = true;
                     stack.push((v, child_da_pos));
                 }
             }
         }
-        (bases, out_checks)
+        (bases, checks, outs)
     }
 }
