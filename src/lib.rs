@@ -48,6 +48,9 @@ use syn::{
 
 use crate::trie::Sparse;
 
+/// Retrieves pattern strings from the given token.
+///
+/// None indicates a wild card pattern (`_`).
 fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
     let mut pats = vec![];
     match pat {
@@ -156,7 +159,7 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     for (k, v) in map {
         trie.add(k, v);
     }
-    let (bases, out_checks) = trie.build_double_array_trie();
+    let (bases, out_checks) = trie.build_double_array_trie(wildcard_idx);
 
     let base = bases.iter();
     let out_check = out_checks.iter();
@@ -178,15 +181,13 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
                 }
                 return #wildcard_idx;
             }
-            let out = *out_checks.get_unchecked(pos) >> 8;
-            if out != 0xffffff {
-                out
-            } else {
-                #wildcard_idx
-            }
+            *out_checks.get_unchecked(pos) >> 8
         })( #expr ) {
             #( #arm, )*
-            _ => unreachable!(),
+            // Safety: A query always matches one of the patterns because
+            // all patterns in the input match's AST are expanded. (Even
+            // mismatched cases are always captured by wildcard_idx.)
+            _ => unsafe { std::hint::unreachable_unchecked() },
         }
     })
 }
