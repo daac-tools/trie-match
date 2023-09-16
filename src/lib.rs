@@ -196,8 +196,8 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
         if let Some(attr) = attrs.first() {
             return Err(Error::new(
                 attr.span(),
-                "attribute not supported here (Note: `#[cfg(...)]` \
-                attribute is supported on Nightly Rust. See the documentation)",
+                "attribute not supported here (Note: `#[cfg(...)]` attribute is supported only if \
+                the `cfg_attribute` feature is enabled. See the documentation)",
             ));
         }
 
