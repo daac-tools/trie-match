@@ -179,6 +179,7 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     let mut wildcard_idx = None;
     let mut built_arms = vec![];
     let mut i = 0;
+    #[allow(clippy::explicit_counter_loop)]
     for Arm {
         attrs,
         pat,

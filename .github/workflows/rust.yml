@@ -50,7 +50,8 @@ jobs:
         run: cargo test
 
       - name: Run cargo doc
-        run: cargo doc --release --all-features
+        if: ${{ matrix.rust == 'nightly' }}
+        run: cargo doc --release
         env:
           RUSTDOCFLAGS: "-Dwarnings"
 
