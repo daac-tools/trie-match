@@ -77,14 +77,14 @@ impl<T> Sparse<T> {
     ///
     /// # Returns
     ///
-    /// The first item is a `base` array, and the second item is `out_check` array.
+    /// A tuple of a base array, a check array, and a value array.
     pub fn build_double_array_trie(&self, wildcard_value: T) -> (Vec<i32>, Vec<u8>, Vec<T>)
     where
         T: Copy,
     {
         let mut bases = vec![i32::MAX];
-        let mut outs = vec![wildcard_value];
         let mut checks = vec![0];
+        let mut values = vec![wildcard_value];
         let mut is_used = vec![true];
         let mut stack = vec![(0, 0)];
         let mut used_bases = HashSet::new();
@@ -92,7 +92,7 @@ impl<T> Sparse<T> {
         while let Some((state_id, da_pos)) = stack.pop() {
             let state = &self.states[state_id];
             if let Some(val) = state.value {
-                outs[da_pos] = val;
+                values[da_pos] = val;
             }
             for &u in &is_used[usize::try_from(search_start).unwrap()..] {
                 if !u {
@@ -108,7 +108,7 @@ impl<T> Sparse<T> {
                     if child_da_pos >= bases.len() {
                         bases.resize(child_da_pos + 1, i32::MAX);
                         checks.resize(child_da_pos + 1, 0);
-                        outs.resize(child_da_pos + 1, wildcard_value);
+                        values.resize(child_da_pos + 1, wildcard_value);
                         is_used.resize(child_da_pos + 1, false);
                     }
                     checks[child_da_pos] = k;
@@ -117,6 +117,6 @@ impl<T> Sparse<T> {
                 }
             }
         }
-        (bases, checks, outs)
+        (bases, checks, values)
     }
 }
