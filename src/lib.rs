@@ -204,7 +204,6 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
             return Err(Error::new(if_token.span(), "match guard not supported"));
         }
         let pat_strs = retrieve_match_patterns(&pat)?;
-        let i_tmp = u32::try_from(i).unwrap();
         for pat_str in pat_strs {
             if let Some(pat_str) = pat_str {
                 if map.contains_key(&pat_str) {
@@ -218,7 +217,7 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
                 wildcard_idx.replace(i);
             }
         }
-        built_arms.push(quote! { #i_tmp => #body });
+        built_arms.push(quote! { #i => #body });
         i += 1;
     }
     if wildcard_idx.is_none() {
