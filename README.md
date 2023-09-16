@@ -62,6 +62,26 @@ Furthermore, this implementation uses the compact double-array data structure
 to achieve efficient state-to-state traversal, and the time complexity becomes
 *O(m)*.
 
+## `cfg` attributes
+
+Only when using Nightly Rust, this macro supports conditional compilation with
+the `cfg` attribute. To use this feature, enable `features = ["cfg_attribute"]`
+in your `Cargo.toml`.
+
+### Example
+
+```rust
+trie_match! {
+    match x {
+        #[cfg(feature = "foo")]
+        "a" => { .. }
+        #[cfg(feature = "bar")]
+        "b" => { .. }
+        _ => { .. }
+    }
+}
+```
+
 ## Limitations
 
 The followings are different from the normal `match` expression:
@@ -70,7 +90,6 @@ The followings are different from the normal `match` expression:
 * The wildcard is evaluated last. (The normal `match` expression does not
   match patterns after the wildcard.)
 * Pattern bindings are unavailable.
-* Attributes for match arms are unavailable.
 * Guards are unavailable.
 
 Sometimes the normal `match` expression is faster, depending on how

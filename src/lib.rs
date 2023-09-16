@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cfg_attribute", feature(proc_macro_expand))]
+
 //! # `trie_match! {}`
 //!
 //! This macro speeds up Rust's `match` expression for comparing strings by using a compact
@@ -13,16 +15,49 @@
 //!
 //! let x = "abd";
 //!
-//! trie_match! {
+//! let result = trie_match! {
 //!     match x {
-//!         "a" => { println!("x"); }
-//!         "abc" => { println!("y"); }
-//!         "abd" | "bcc" => { println!("z"); }
-//!         "bc" => { println!("w"); }
-//!         _ => { println!(" "); }
+//!         "a" => 0,
+//!         "abc" => 1,
+//!         "abd" | "bcc" => 2,
+//!         "bc" => 3,
+//!         _ => 4,
 //!     }
-//! }
+//! };
+//!
+//! assert_eq!(result, 2);
 //! ```
+#![cfg_attr(
+    feature = "cfg_attribute",
+    doc = r#"
+## `cfg` attributes
+
+Only when using Nightly Rust, this macro supports conditional compilation with
+the `cfg` attribute. To use this feature, enable `features = ["cfg_attribute"]`
+in your `Cargo.toml`.
+
+### Example
+
+```
+use trie_match::trie_match;
+
+let x = "abd";
+
+let result = trie_match! {
+    match x {
+        #[cfg(not(feature = "foo"))]
+        "a" => 0,
+        "abc" => 1,
+        #[cfg(feature = "bar")]
+        "abd" | "bcc" => 2,
+        "bc" => 3,
+        _ => 4,
+    }
+};
+
+assert_eq!(result, 4);
+```
+"#)]
 //!
 //! ## Limitations
 //!
@@ -34,6 +69,7 @@
 //! * Pattern bindings are unavailable.
 //! * Attributes for match arms are unavailable.
 //! * Guards are unavailable.
+
 mod trie;
 
 extern crate proc_macro;
@@ -45,6 +81,11 @@ use quote::quote;
 use syn::{
     parse_macro_input, spanned::Spanned, Arm, Error, ExprLit, ExprMatch, Lit, Pat, PatOr, PatWild,
 };
+
+#[cfg(feature = "cfg_attribute")]
+use proc_macro2::Ident;
+#[cfg(feature = "cfg_attribute")]
+use syn::{Attribute, Meta};
 
 use crate::trie::Sparse;
 
@@ -107,6 +148,28 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
     Ok(pats)
 }
 
+#[cfg(feature = "cfg_attribute")]
+fn evaluate_cfg_attribute(attrs: &[Attribute]) -> Result<bool, Error> {
+    for attr in attrs {
+        let ident = attr.path().get_ident().map(Ident::to_string);
+        if ident.as_ref().map(String::as_str) == Some("cfg") {
+            if let Meta::List(list) = &attr.meta {
+                let tokens = &list.tokens;
+                let cfg_macro: proc_macro::TokenStream = quote! { cfg!(#tokens) }.into();
+                let expr = cfg_macro
+                    .expand_expr()
+                    .map_err(|e| Error::new(tokens.span(), e.to_string()))?;
+                if expr.to_string() == "false" {
+                    return Ok(false);
+                }
+                continue;
+            }
+        }
+        return Err(Error::new(attr.span(), "only supports the cfg attribute"));
+    }
+    Ok(true)
+}
+
 fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     let ExprMatch {
         attrs, expr, arms, ..
@@ -114,25 +177,30 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     let mut map = HashMap::new();
     let mut wildcard_idx = None;
     let mut built_arms = vec![];
-    for (
-        i,
-        Arm {
+    let mut i = 0;
+    for Arm {
             attrs,
             pat,
             guard,
             body,
             ..
-        },
-    ) in arms.into_iter().enumerate()
+        } in arms
     {
-        if let Some(attr) = attrs.first() {
-            return Err(Error::new(attr.span(), "attribute not supported here"));
+        #[cfg(feature = "cfg_attribute")]
+        if !evaluate_cfg_attribute(&attrs)? {
+            continue;
         }
+        #[cfg(not(feature = "cfg_attribute"))]
+        if let Some(attr) = attrs.first() {
+            return Err(Error::new(attr.span(), "attribute not supported here (Note: `#[cfg(...)]` \
+                attribute is supported on Nightly Rust. See the documentation)"));
+        }
+
         if let Some((if_token, _)) = guard {
             return Err(Error::new(if_token.span(), "match guard not supported"));
         }
         let pat_strs = retrieve_match_patterns(&pat)?;
-        let i = u32::try_from(i).unwrap();
+        let i_tmp = u32::try_from(i).unwrap();
         for pat_str in pat_strs {
             if let Some(pat_str) = pat_str {
                 if map.contains_key(&pat_str) {
@@ -146,7 +214,8 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
                 wildcard_idx.replace(i);
             }
         }
-        built_arms.push(quote! { #i => #body });
+        built_arms.push(quote! { #i_tmp => #body });
+        i += 1;
     }
     if wildcard_idx.is_none() {
         return Err(Error::new(
