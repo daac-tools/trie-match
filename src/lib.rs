@@ -57,7 +57,8 @@ let result = trie_match! {
 
 assert_eq!(result, 4);
 ```
-"#)]
+"#
+)]
 //!
 //! ## Limitations
 //!
@@ -179,12 +180,12 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     let mut built_arms = vec![];
     let mut i = 0;
     for Arm {
-            attrs,
-            pat,
-            guard,
-            body,
-            ..
-        } in arms
+        attrs,
+        pat,
+        guard,
+        body,
+        ..
+    } in arms
     {
         #[cfg(feature = "cfg_attribute")]
         if !evaluate_cfg_attribute(&attrs)? {
@@ -192,8 +193,11 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
         }
         #[cfg(not(feature = "cfg_attribute"))]
         if let Some(attr) = attrs.first() {
-            return Err(Error::new(attr.span(), "attribute not supported here (Note: `#[cfg(...)]` \
-                attribute is supported on Nightly Rust. See the documentation)"));
+            return Err(Error::new(
+                attr.span(),
+                "attribute not supported here (Note: `#[cfg(...)]` \
+                attribute is supported on Nightly Rust. See the documentation)",
+            ));
         }
 
         if let Some((if_token, _)) = guard {
