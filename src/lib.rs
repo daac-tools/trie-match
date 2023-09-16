@@ -109,7 +109,7 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<String>>, Error> {
 }
 
 struct MatchInfo {
-    bodies: Vec<Box<Expr>>,
+    bodies: Vec<Expr>,
     pattern_map: HashMap<String, usize>,
     wildcard_idx: usize,
 }
@@ -127,7 +127,7 @@ fn parse_match_arms(arms: &[Arm]) -> Result<MatchInfo, Error> {
             body,
             ..
         },
-    ) in arms.into_iter().enumerate()
+    ) in arms.iter().enumerate()
     {
         if let Some(attr) = attrs.first() {
             return Err(Error::new(attr.span(), "attribute not supported here"));
@@ -135,7 +135,7 @@ fn parse_match_arms(arms: &[Arm]) -> Result<MatchInfo, Error> {
         if let Some((if_token, _)) = guard {
             return Err(Error::new(if_token.span(), "match guard not supported"));
         }
-        let pat_strs = retrieve_match_patterns(&pat)?;
+        let pat_strs = retrieve_match_patterns(pat)?;
         for pat_str in pat_strs {
             if let Some(pat_str) = pat_str {
                 if pattern_map.contains_key(&pat_str) {
@@ -149,7 +149,7 @@ fn parse_match_arms(arms: &[Arm]) -> Result<MatchInfo, Error> {
                 wildcard_idx.replace(i);
             }
         }
-        bodies.push(body.clone());
+        bodies.push(*body.clone());
     }
     let Some(wildcard_idx) = wildcard_idx else {
         return Err(Error::new(
