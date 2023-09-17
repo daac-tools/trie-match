@@ -1,9 +1,5 @@
 use std::collections::{BTreeMap, HashSet};
 
-/// An invalid check value to represent unused double-array states. This value will be never used
-/// in a pattern because trie-match allows only string literal patterns in UTF-8.
-const INVALID_CHECK: u8 = 0xFF;
-
 #[derive(Debug)]
 struct State<T> {
     edges: BTreeMap<u8, usize>,
@@ -87,11 +83,13 @@ impl<T> Sparse<T> {
         T: Copy,
     {
         let mut bases = vec![i32::MAX];
-        let mut checks = vec![INVALID_CHECK];
+        let mut checks = vec![0];
         let mut values = vec![wildcard_value];
         let mut is_used = vec![true];
         let mut stack = vec![(0, 0)];
-        let mut used_bases = HashSet::new();
+        // base=0 must be reserved for avoiding invalid transitions.
+        // See https://github.com/daac-tools/trie-match/pull/11.
+        let mut used_bases = HashSet::from([0]);
         let mut search_start = 0;
         while let Some((state_id, da_pos)) = stack.pop() {
             let state = &self.states[state_id];
@@ -111,7 +109,7 @@ impl<T> Sparse<T> {
                     let child_da_pos = usize::try_from(base + i32::from(k)).unwrap();
                     if child_da_pos >= bases.len() {
                         bases.resize(child_da_pos + 1, i32::MAX);
-                        checks.resize(child_da_pos + 1, INVALID_CHECK);
+                        checks.resize(child_da_pos + 1, 0);
                         values.resize(child_da_pos + 1, wildcard_value);
                         is_used.resize(child_da_pos + 1, false);
                     }
