@@ -117,6 +117,22 @@ impl<T> Sparse<T> {
                 }
             }
         }
+        // Postprocessing to avoid invalid transitions due to invalid checks.
+        'a: for ((da_pos, check), &used) in checks.iter_mut().enumerate().zip(is_used.iter()) {
+            if da_pos != 0 && used {
+                continue;
+            }
+            let da_pos = i32::try_from(da_pos).unwrap();
+            for k in 0..256 {
+                let base = da_pos - k;
+                if !used_bases.contains(&base) {
+                    // There can be no transition using k from an unused BASE value.
+                    *check = u8::try_from(k).unwrap();
+                    continue 'a;
+                }
+            }
+            unreachable!("No unused base found");
+        }
         (bases, checks, values)
     }
 }
