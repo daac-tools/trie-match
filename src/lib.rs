@@ -107,6 +107,10 @@ fn convert_slice_pattern(pat: &PatSlice) -> Result<Option<Vec<u8>>, Error> {
     Ok(Some(result))
 }
 
+/// Checks a wildcard pattern and returns `None`.
+///
+/// The reason the type is `Result<Option<Vec<u8>>, Error>` instead of `Result<(), Error>` is for
+/// consistency with other functions.
 fn convert_wildcard_pattern(pat: &PatWild) -> Result<Option<Vec<u8>>, Error> {
     let PatWild { attrs, .. } = pat;
     if let Some(attr) = attrs.first() {
@@ -115,6 +119,7 @@ fn convert_wildcard_pattern(pat: &PatWild) -> Result<Option<Vec<u8>>, Error> {
     Ok(None)
 }
 
+/// Converts a reference pattern (e.g. `&[0, 1, ...]`) into a byte sequence.
 fn convert_reference_pattern(pat: &PatReference) -> Result<Option<Vec<u8>>, Error> {
     let PatReference { attrs, pat, .. } = pat;
     if let Some(attr) = attrs.first() {
@@ -123,7 +128,7 @@ fn convert_reference_pattern(pat: &PatReference) -> Result<Option<Vec<u8>>, Erro
     match &**pat {
         Pat::Lit(pat) => Ok(convert_literal_pattern(pat)?),
         Pat::Slice(pat) => Ok(convert_slice_pattern(pat)?),
-        Pat::Wild(pat) => Ok(convert_wildcard_pattern(pat)?),
+        Pat::Reference(pat) => Ok(convert_reference_pattern(pat)?),
         _ => Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN)),
     }
 }
