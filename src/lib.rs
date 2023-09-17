@@ -126,9 +126,9 @@ fn convert_reference_pattern(pat: &PatReference) -> Result<Option<Vec<u8>>, Erro
         return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED));
     }
     match &**pat {
-        Pat::Lit(pat) => Ok(convert_literal_pattern(pat)?),
-        Pat::Slice(pat) => Ok(convert_slice_pattern(pat)?),
-        Pat::Reference(pat) => Ok(convert_reference_pattern(pat)?),
+        Pat::Lit(pat) => convert_literal_pattern(pat),
+        Pat::Slice(pat) => convert_slice_pattern(pat),
+        Pat::Reference(pat) => convert_reference_pattern(pat),
         _ => Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN)),
     }
 }
