@@ -28,7 +28,7 @@
 //!
 //! The followings are different from the normal `match` expression:
 //!
-//! * Only supports string comparison.
+//! * Only supports strings, byte strings, and u8 slices as patterns.
 //! * The wildcard is evaluated last. (The normal `match` expression does not
 //!   match patterns after the wildcard.)
 //! * Pattern bindings are unavailable.
