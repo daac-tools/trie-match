@@ -131,6 +131,10 @@ impl<T> Sparse<T> {
                     continue 'a;
                 }
             }
+            // If edges allow all label values from x00 to xFF, such unreachable instances can be
+            // created. However, this would not happen in trie-match because only string literals
+            // are allowed, and xFF will never appear.
+            // (See hogehoge)
             unreachable!("No unused base found");
         }
         (bases, checks, values)
