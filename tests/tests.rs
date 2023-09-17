@@ -126,6 +126,25 @@ fn test_try_base_conflict() {
     assert_eq!(f("\u{3}"), 1);
 }
 
+// This test confirms that check[0] does not have an invalid value of zero.
+#[test]
+fn test_invalid_root_check_of_zero() {
+    // [0] -x01-> [1]
+    //    \-x00-> [0] ? If check[0] is 0, such an invalid transition is possible.
+    //
+    //  base: [0, MAX]
+    // check: [0,   1]
+    let f = |text| {
+        trie_match! {
+            match text {
+                "\u{1}" => 1,
+                _ => 0,
+            }
+        }
+    };
+    assert_eq!(f("\u{0}\u{1}"), 0);
+}
+
 #[test]
 fn test_bytes_literal() {
     let f = |text: &[u8]| {

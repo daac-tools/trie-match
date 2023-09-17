@@ -87,7 +87,9 @@ impl<T> Sparse<T> {
         let mut values = vec![wildcard_value];
         let mut is_used = vec![true];
         let mut stack = vec![(0, 0)];
-        let mut used_bases = HashSet::new();
+        // base=0 must be reserved for avoiding invalid transitions.
+        // See https://github.com/daac-tools/trie-match/pull/11.
+        let mut used_bases = HashSet::from([0]);
         let mut search_start = 0;
         while let Some((state_id, da_pos)) = stack.pop() {
             let state = &self.states[state_id];
