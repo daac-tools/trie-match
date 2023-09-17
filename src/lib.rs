@@ -276,7 +276,7 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
                     return __TrieMatchValue::#wildcard_ident;
                 }
                 out_checks.get_unchecked(pos).0
-            })( ::std::convert::AsRef::<[u8]>::as_ref( #expr ) ) {
+            })( ::core::convert::AsRef::<[u8]>::as_ref( #expr ) ) {
                 #( #arm, )*
             }
         }

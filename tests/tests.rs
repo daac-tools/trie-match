@@ -1,3 +1,5 @@
+#![no_std]
+
 use trie_match::trie_match;
 
 #[test]
