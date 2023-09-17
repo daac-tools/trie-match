@@ -43,8 +43,8 @@ use std::collections::HashMap;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input, spanned::Spanned, Arm, Error, Expr, ExprLit, ExprMatch, Lit, Pat, PatOr, PatSlice,
-    PatWild,
+    parse_macro_input, spanned::Spanned, Arm, Error, Expr, ExprLit, ExprMatch, Lit, Pat, PatOr,
+    PatSlice, PatWild,
 };
 
 static ERROR_UNEXPECTED_PATTERN: &str =
@@ -86,7 +86,7 @@ fn convert_slice_pattern(pat: &PatSlice) -> Result<Option<Vec<u8>>, Error> {
                 match lit {
                     Lit::Int(i) => {
                         let int_type = i.suffix();
-                        if int_type != "u8" && int_type != "" {
+                        if int_type != "u8" && !int_type.is_empty() {
                             return Err(Error::new(i.span(), ERROR_EXPECTED_U8_LITERAL));
                         }
                         result.push(i.base10_parse::<u8>()?);
