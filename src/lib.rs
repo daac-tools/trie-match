@@ -44,7 +44,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{
     parse_macro_input, spanned::Spanned, Arm, Error, Expr, ExprLit, ExprMatch, Lit, Pat, PatOr,
-    PatSlice, PatWild,
+    PatReference, PatSlice, PatWild,
 };
 
 static ERROR_UNEXPECTED_PATTERN: &str =
@@ -115,6 +115,21 @@ fn convert_wildcard_pattern(pat: &PatWild) -> Result<Option<Vec<u8>>, Error> {
     Ok(None)
 }
 
+fn convert_reference_pattern(pat: &PatReference) -> Result<Option<Vec<u8>>, Error> {
+    let PatReference { attrs, pat, .. } = pat;
+    if let Some(attr) = attrs.first() {
+        return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED));
+    }
+    match &**pat {
+        Pat::Lit(pat) => Ok(convert_literal_pattern(pat)?),
+        Pat::Slice(pat) => Ok(convert_slice_pattern(pat)?),
+        Pat::Wild(pat) => Ok(convert_wildcard_pattern(pat)?),
+        _ => {
+            return Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN));
+        }
+    }
+}
+
 /// Retrieves pattern strings from the given token.
 ///
 /// None indicates a wild card pattern (`_`).
@@ -124,6 +139,7 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
         Pat::Lit(pat) => pats.push(convert_literal_pattern(pat)?),
         Pat::Slice(pat) => pats.push(convert_slice_pattern(pat)?),
         Pat::Wild(pat) => pats.push(convert_wildcard_pattern(pat)?),
+        Pat::Reference(pat) => pats.push(convert_reference_pattern(pat)?),
         Pat::Or(PatOr {
             attrs,
             leading_vert: None,
@@ -137,7 +153,9 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
                     Pat::Lit(pat) => pats.push(convert_literal_pattern(pat)?),
                     Pat::Slice(pat) => pats.push(convert_slice_pattern(pat)?),
                     Pat::Wild(pat) => pats.push(convert_wildcard_pattern(pat)?),
+                    Pat::Reference(pat) => pats.push(convert_reference_pattern(pat)?),
                     _ => {
+                        dbg!(pat);
                         return Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN));
                     }
                 }

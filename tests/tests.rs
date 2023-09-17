@@ -167,3 +167,17 @@ fn test_slice_numbers() {
     assert_eq!(f(&[0, 1, 2]), 0);
     assert_eq!(f(&[0, 1]), 1);
 }
+
+#[test]
+fn test_slice_ref_numbers() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                &[0, 1, 2] => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(&[0, 1, 2]), 0);
+    assert_eq!(f(&[0, 1]), 1);
+}
