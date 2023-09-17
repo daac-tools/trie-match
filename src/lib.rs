@@ -124,9 +124,7 @@ fn convert_reference_pattern(pat: &PatReference) -> Result<Option<Vec<u8>>, Erro
         Pat::Lit(pat) => Ok(convert_literal_pattern(pat)?),
         Pat::Slice(pat) => Ok(convert_slice_pattern(pat)?),
         Pat::Wild(pat) => Ok(convert_wildcard_pattern(pat)?),
-        _ => {
-            return Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN));
-        }
+        _ => Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN)),
     }
 }
 
@@ -155,7 +153,6 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
                     Pat::Wild(pat) => pats.push(convert_wildcard_pattern(pat)?),
                     Pat::Reference(pat) => pats.push(convert_reference_pattern(pat)?),
                     _ => {
-                        dbg!(pat);
                         return Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN));
                     }
                 }
