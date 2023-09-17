@@ -125,3 +125,45 @@ fn test_try_base_conflict() {
     assert_eq!(f("\u{2}\u{3}"), 1);
     assert_eq!(f("\u{3}"), 1);
 }
+
+#[test]
+fn test_bytes_literal() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                b"abc" => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(b"abc"), 0);
+    assert_eq!(f(b"ab"), 1);
+}
+
+#[test]
+fn test_slice_byte_literal() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                [b'a', b'b', b'c'] => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(b"abc"), 0);
+    assert_eq!(f(b"ab"), 1);
+}
+
+#[test]
+fn test_slice_numbers() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                [0, 1, 2] => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(&[0, 1, 2]), 0);
+    assert_eq!(f(&[0, 1]), 1);
+}
