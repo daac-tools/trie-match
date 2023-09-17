@@ -1,5 +1,9 @@
 use std::collections::{BTreeMap, HashSet};
 
+/// An invalid check value to represent unused double-array states. This value will be never used
+/// in a pattern because trie-match allows only string literal patterns in UTF-8.
+const INVALID_CHECK: u8 = 0xFF;
+
 #[derive(Debug)]
 struct State<T> {
     edges: BTreeMap<u8, usize>,
@@ -83,7 +87,7 @@ impl<T> Sparse<T> {
         T: Copy,
     {
         let mut bases = vec![i32::MAX];
-        let mut checks = vec![0];
+        let mut checks = vec![INVALID_CHECK];
         let mut values = vec![wildcard_value];
         let mut is_used = vec![true];
         let mut stack = vec![(0, 0)];
@@ -107,7 +111,7 @@ impl<T> Sparse<T> {
                     let child_da_pos = usize::try_from(base + i32::from(k)).unwrap();
                     if child_da_pos >= bases.len() {
                         bases.resize(child_da_pos + 1, i32::MAX);
-                        checks.resize(child_da_pos + 1, 0);
+                        checks.resize(child_da_pos + 1, INVALID_CHECK);
                         values.resize(child_da_pos + 1, wildcard_value);
                         is_used.resize(child_da_pos + 1, false);
                     }
@@ -116,26 +120,6 @@ impl<T> Sparse<T> {
                     stack.push((v, child_da_pos));
                 }
             }
-        }
-        // Postprocessing to avoid invalid transitions due to invalid checks.
-        'a: for ((da_pos, check), &used) in checks.iter_mut().enumerate().zip(is_used.iter()) {
-            if da_pos != 0 && used {
-                continue;
-            }
-            let da_pos = i32::try_from(da_pos).unwrap();
-            for k in 0..256 {
-                let base = da_pos - k;
-                if !used_bases.contains(&base) {
-                    // There can be no transition using k from an unused BASE value.
-                    *check = u8::try_from(k).unwrap();
-                    continue 'a;
-                }
-            }
-            // If edges allow all label values from x00 to xFF, such unreachable instances can be
-            // created. However, this would not happen in trie-match because only string literals
-            // are allowed, and xFF will never appear.
-            // (See hogehoge)
-            unreachable!("No unused base found");
         }
         (bases, checks, values)
     }
