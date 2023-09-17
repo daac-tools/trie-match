@@ -51,7 +51,7 @@ jobs:
 
       - name: Run cargo doc
         if: ${{ matrix.rust == 'nightly' }}
-        run: cargo doc --release
+        run: cargo doc --release --all-features
         env:
           RUSTDOCFLAGS: "-Dwarnings"
 
