@@ -62,7 +62,7 @@ Furthermore, this implementation uses the compact double-array data structure
 to achieve efficient state-to-state traversal, and the time complexity becomes
 *O(m)*.
 
-## `cfg` attributes
+## `cfg` attribute
 
 Only when using Nightly Rust, this macro supports conditional compilation with
 the `cfg` attribute. To use this feature, enable `features = ["cfg_attribute"]`

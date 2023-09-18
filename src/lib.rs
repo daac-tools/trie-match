@@ -30,7 +30,7 @@
 #![cfg_attr(
     feature = "cfg_attribute",
     doc = r#"
-## `cfg` attributes
+## `cfg` attribute
 
 Only when using Nightly Rust, this macro supports conditional compilation with
 the `cfg` attribute. To use this feature, enable `features = ["cfg_attribute"]`
@@ -262,8 +262,8 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
         if let Some(attr) = attrs.first() {
             return Err(Error::new(
                 attr.span(),
-                "attribute not supported here (Note: `#[cfg(...)]` attribute is supported only if \
-                the `cfg_attribute` feature is enabled. See the documentation)",
+                "attribute not supported here\nnote: consider enabling the `cfg_attribute` \
+                feature: https://docs.rs/trie-match/latest/trie_match/#cfg-attribute",
             ));
         }
 
