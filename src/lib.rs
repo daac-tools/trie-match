@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cfg_attribute", feature(proc_macro_expand))]
+
 //! # `trie_match! {}`
 //!
 //! This macro speeds up Rust's `match` expression for comparing strings by using a compact
@@ -13,16 +15,50 @@
 //!
 //! let x = "abd";
 //!
-//! trie_match! {
+//! let result = trie_match! {
 //!     match x {
-//!         "a" => { println!("x"); }
-//!         "abc" => { println!("y"); }
-//!         "abd" | "bcc" => { println!("z"); }
-//!         "bc" => { println!("w"); }
-//!         _ => { println!(" "); }
+//!         "a" => 0,
+//!         "abc" => 1,
+//!         "abd" | "bcc" => 2,
+//!         "bc" => 3,
+//!         _ => 4,
 //!     }
-//! }
+//! };
+//!
+//! assert_eq!(result, 2);
 //! ```
+#![cfg_attr(
+    feature = "cfg_attribute",
+    doc = r#"
+## `cfg` attribute
+
+Only when using Nightly Rust, this macro supports conditional compilation with
+the `cfg` attribute. To use this feature, enable `features = ["cfg_attribute"]`
+in your `Cargo.toml`.
+
+### Example
+
+```
+use trie_match::trie_match;
+
+let x = "abd";
+
+let result = trie_match! {
+    match x {
+        #[cfg(not(feature = "foo"))]
+        "a" => 0,
+        "abc" => 1,
+        #[cfg(feature = "bar")]
+        "abd" | "bcc" => 2,
+        "bc" => 3,
+        _ => 4,
+    }
+};
+
+assert_eq!(result, 4);
+```
+"#
+)]
 //!
 //! ## Limitations
 //!
@@ -32,8 +68,8 @@
 //! * The wildcard is evaluated last. (The normal `match` expression does not
 //!   match patterns after the wildcard.)
 //! * Pattern bindings are unavailable.
-//! * Attributes for match arms are unavailable.
 //! * Guards are unavailable.
+
 mod trie;
 
 extern crate proc_macro;
@@ -47,6 +83,13 @@ use syn::{
     PatReference, PatSlice, PatWild,
 };
 
+#[cfg(feature = "cfg_attribute")]
+use proc_macro2::Ident;
+#[cfg(feature = "cfg_attribute")]
+use syn::{Attribute, Meta};
+
+use crate::trie::Sparse;
+
 static ERROR_UNEXPECTED_PATTERN: &str =
     "`trie_match` only supports string literals, byte string literals, and u8 slices as patterns";
 static ERROR_ATTRIBUTE_NOT_SUPPORTED: &str = "attribute not supported here";
@@ -55,7 +98,13 @@ static ERROR_UNREACHABLE_PATTERN: &str = "unreachable pattern";
 static ERROR_PATTERN_NOT_COVERED: &str = "non-exhaustive patterns: `_` not covered";
 static ERROR_EXPECTED_U8_LITERAL: &str = "expected `u8` integer literal";
 
-use crate::trie::Sparse;
+#[cfg(not(feature = "cfg_attribute"))]
+static ERROR_ATTRIBUTE_NOT_SUPPORTED_CFG: &str =
+    "attribute not supported here\nnote: consider enabling the `cfg_attribute` feature: \
+    https://docs.rs/trie-match/latest/trie_match/#cfg-attribute";
+
+#[cfg(feature = "cfg_attribute")]
+static ERROR_NOT_CFG_ATTRIBUTE: &str = "only supports the cfg attribute";
 
 /// Converts a literal pattern into a byte sequence.
 fn convert_literal_pattern(pat: &ExprLit) -> Result<Option<Vec<u8>>, Error> {
@@ -170,6 +219,28 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
     Ok(pats)
 }
 
+#[cfg(feature = "cfg_attribute")]
+fn evaluate_cfg_attribute(attrs: &[Attribute]) -> Result<bool, Error> {
+    for attr in attrs {
+        let ident = attr.path().get_ident().map(Ident::to_string);
+        if ident.as_deref() == Some("cfg") {
+            if let Meta::List(list) = &attr.meta {
+                let tokens = &list.tokens;
+                let cfg_macro: proc_macro::TokenStream = quote! { cfg!(#tokens) }.into();
+                let expr = cfg_macro
+                    .expand_expr()
+                    .map_err(|e| Error::new(tokens.span(), e.to_string()))?;
+                if expr.to_string() == "false" {
+                    return Ok(false);
+                }
+                continue;
+            }
+        }
+        return Err(Error::new(attr.span(), ERROR_NOT_CFG_ATTRIBUTE));
+    }
+    Ok(true)
+}
+
 struct MatchInfo {
     bodies: Vec<Expr>,
     pattern_map: HashMap<Vec<u8>, usize>,
@@ -180,20 +251,25 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
     let mut pattern_map = HashMap::new();
     let mut wildcard_idx = None;
     let mut bodies = vec![];
-    for (
-        i,
-        Arm {
-            attrs,
-            pat,
-            guard,
-            body,
-            ..
-        },
-    ) in arms.into_iter().enumerate()
+    let mut i = 0;
+    #[allow(clippy::explicit_counter_loop)]
+    for Arm {
+        attrs,
+        pat,
+        guard,
+        body,
+        ..
+    } in arms
     {
-        if let Some(attr) = attrs.first() {
-            return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED));
+        #[cfg(feature = "cfg_attribute")]
+        if !evaluate_cfg_attribute(&attrs)? {
+            continue;
         }
+        #[cfg(not(feature = "cfg_attribute"))]
+        if let Some(attr) = attrs.first() {
+            return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED_CFG));
+        }
+
         if let Some((if_token, _)) = guard {
             return Err(Error::new(if_token.span(), ERROR_GUARD_NOT_SUPPORTED));
         }
@@ -212,6 +288,7 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
             }
         }
         bodies.push(*body);
+        i += 1;
     }
     let Some(wildcard_idx) = wildcard_idx else {
         return Err(Error::new(Span::call_site(), ERROR_PATTERN_NOT_COVERED));

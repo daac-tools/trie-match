@@ -23,9 +23,17 @@ syn = { version = "2.0", features = ["full", "extra-traits"] } # MIT or Apache-2
 proc-macro2 = "1.0" # MIT or Apache-2.0
 quote = "1.0" # MIT or Apache-2.0
 
+[features]
+# Nightly only
+cfg_attribute = []
+
 [dev-dependencies]
 criterion = { version = "0.4.0", features = ["html_reports"] } # MIT or Apache-2.0
 
 [[bench]]
 name = "match"
 harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

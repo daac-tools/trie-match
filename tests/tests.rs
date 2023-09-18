@@ -202,3 +202,50 @@ fn test_slice_ref_numbers() {
     assert_eq!(f(&[0, 1, 2]), 0);
     assert_eq!(f(&[0, 1]), 1);
 }
+
+#[cfg(feature = "cfg_attribute")]
+#[test]
+fn test_cfg_attribute() {
+    let f = |text| {
+        trie_match! {
+            match text {
+                #[cfg(test)]
+                "a" => 0,
+                #[cfg(not(test))]
+                "b" => 1,
+                _ => 2,
+            }
+        }
+    };
+    assert_eq!(f("a"), 0);
+    assert_eq!(f("b"), 2);
+    assert_eq!(f("c"), 2);
+}
+
+#[cfg(feature = "cfg_attribute")]
+#[test]
+fn test_cfg_attribute_combination() {
+    let f = |text| {
+        trie_match! {
+            match text {
+                #[cfg(test)]
+                #[cfg(feature = "cfg_attribute")]
+                "a" => 0,
+                #[cfg(not(test))]
+                #[cfg(feature = "cfg_attribute")]
+                "b" => 1,
+                #[cfg(test)]
+                #[cfg(not(feature = "cfg_attribute"))]
+                "c" => 2,
+                #[cfg(not(test))]
+                #[cfg(not(feature = "cfg_attribute"))]
+                "d" => 3,
+                _ => 4,
+            }
+        }
+    };
+    assert_eq!(f("a"), 0);
+    assert_eq!(f("b"), 4);
+    assert_eq!(f("c"), 4);
+    assert_eq!(f("d"), 4);
+}
