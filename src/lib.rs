@@ -68,7 +68,6 @@ assert_eq!(result, 4);
 //! * The wildcard is evaluated last. (The normal `match` expression does not
 //!   match patterns after the wildcard.)
 //! * Pattern bindings are unavailable.
-//! * Attributes for match arms are unavailable.
 //! * Guards are unavailable.
 
 mod trie;
