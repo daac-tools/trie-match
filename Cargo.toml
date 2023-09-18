@@ -2,7 +2,10 @@
 name = "trie-match"
 version = "0.1.2"
 edition = "2021"
+
+# Update README and CI settings, accordingly.
 rust-version = "1.65"
+
 authors = [
     "Koichi Akabe <vbkaisetsu@gmail.com>",
 ]
