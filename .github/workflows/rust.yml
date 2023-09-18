@@ -48,9 +48,9 @@ jobs:
       - name: Run cargo test
         run: cargo test
 
-      - name: Run cargo test feature=cfg_attribute
+      - name: Run cargo test all features
         if: ${{ matrix.rust == 'nightly' }}
-        run: cargo test --features cfg_attribute
+        run: cargo test --all-features
 
       - name: Run cargo doc
         if: ${{ matrix.rust == 'nightly' }}

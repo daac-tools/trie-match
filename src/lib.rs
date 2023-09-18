@@ -99,6 +99,14 @@ static ERROR_UNREACHABLE_PATTERN: &str = "unreachable pattern";
 static ERROR_PATTERN_NOT_COVERED: &str = "non-exhaustive patterns: `_` not covered";
 static ERROR_EXPECTED_U8_LITERAL: &str = "expected `u8` integer literal";
 
+#[cfg(not(feature = "cfg_attribute"))]
+static ERROR_ATTRIBUTE_NOT_SUPPORTED_CFG: &str =
+    "attribute not supported here\nnote: consider enabling the `cfg_attribute` feature: \
+    https://docs.rs/trie-match/latest/trie_match/#cfg-attribute";
+
+#[cfg(feature = "cfg_attribute")]
+static ERROR_NOT_CFG_ATTRIBUTE: &str = "only supports the cfg attribute";
+
 /// Converts a literal pattern into a byte sequence.
 fn convert_literal_pattern(pat: &ExprLit) -> Result<Option<Vec<u8>>, Error> {
     let ExprLit { attrs, lit } = pat;
@@ -229,7 +237,7 @@ fn evaluate_cfg_attribute(attrs: &[Attribute]) -> Result<bool, Error> {
                 continue;
             }
         }
-        return Err(Error::new(attr.span(), "only supports the cfg attribute"));
+        return Err(Error::new(attr.span(), ERROR_NOT_CFG_ATTRIBUTE));
     }
     Ok(true)
 }
@@ -260,11 +268,7 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
         }
         #[cfg(not(feature = "cfg_attribute"))]
         if let Some(attr) = attrs.first() {
-            return Err(Error::new(
-                attr.span(),
-                "attribute not supported here\nnote: consider enabling the `cfg_attribute` \
-                feature: https://docs.rs/trie-match/latest/trie_match/#cfg-attribute",
-            ));
+            return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED_CFG));
         }
 
         if let Some((if_token, _)) = guard {
