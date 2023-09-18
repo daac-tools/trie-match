@@ -108,17 +108,17 @@ Experimental results are as follows [μs]:
 
 * AMD Ryzen 7 5700U with Radeon Graphics
 
-  | Bench name           | Normal match | phf crate | Trie match |
-  |----------------------|--------------|-----------|------------|
-  | 100 words random     |         1.94 |      2.02 |   **1.09** |
-  | HTML elements random |         2.32 |      2.43 |   **0.55** |
+  | Bench name           | Normal match | *phf* crate | *trie_match* crate |
+  |----------------------|--------------|-------------|--------------------|
+  | 100 words random     |         1.94 |        2.02 |           **1.09** |
+  | HTML elements random |         2.32 |        2.43 |           **0.55** |
 
 * 12th Gen Intel(R) Core(TM) i7-1270P
 
-  | Bench name           | Normal match | phf crate | Trie match |
-  |----------------------|--------------|-----------|------------|
-  | 100 words random     |         1.13 |      1.29 |   **0.61** |
-  | HTML elements random |         1.24 |      1.51 |   **0.36** |
+  | Bench name           | Normal match | *phf* crate | *trie_match* crate |
+  |----------------------|--------------|-------------|--------------------|
+  | 100 words random     |         1.13 |        1.29 |           **0.61** |
+  | HTML elements random |         1.24 |        1.51 |           **0.36** |
 
 [phf crate](https://github.com/rust-phf/rust-phf): Compile time static maps
 using perfect hash functions.
