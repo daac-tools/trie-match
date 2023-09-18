@@ -1,3 +1,5 @@
+#![no_std]
+
 use trie_match::trie_match;
 
 #[test]
@@ -124,6 +126,81 @@ fn test_try_base_conflict() {
     assert_eq!(f("\u{1}\u{2}\u{3}"), 0);
     assert_eq!(f("\u{2}\u{3}"), 1);
     assert_eq!(f("\u{3}"), 1);
+}
+
+// This test confirms that check[0] does not have an invalid value of zero.
+#[test]
+fn test_invalid_root_check_of_zero() {
+    // [0] -x01-> [1]
+    //    \-x00-> [0] ? If check[0] is 0, such an invalid transition is possible.
+    //
+    //  base: [0, MAX]
+    // check: [0,   1]
+    let f = |text| {
+        trie_match! {
+            match text {
+                "\u{1}" => 1,
+                _ => 0,
+            }
+        }
+    };
+    assert_eq!(f("\u{0}\u{1}"), 0);
+}
+
+#[test]
+fn test_bytes_literal() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                b"abc" => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(b"abc"), 0);
+    assert_eq!(f(b"ab"), 1);
+}
+
+#[test]
+fn test_slice_byte_literal() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                [b'a', b'b', b'c'] => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(b"abc"), 0);
+    assert_eq!(f(b"ab"), 1);
+}
+
+#[test]
+fn test_slice_numbers() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                [0, 1, 2] => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(&[0, 1, 2]), 0);
+    assert_eq!(f(&[0, 1]), 1);
+}
+
+#[test]
+fn test_slice_ref_numbers() {
+    let f = |text: &[u8]| {
+        trie_match! {
+            match text {
+                &[0, 1, 2] => 0,
+                _ => 1,
+            }
+        }
+    };
+    assert_eq!(f(&[0, 1, 2]), 0);
+    assert_eq!(f(&[0, 1]), 1);
 }
 
 #[cfg(feature = "cfg_attribute")]
