@@ -46,8 +46,11 @@ jobs:
         run: cargo clippy -- -D warnings -W clippy::nursery -W clippy::pedantic
 
       - name: Run cargo test
-        continue-on-error: ${{ matrix.rust == 'nightly' }}
         run: cargo test
+
+      - name: Run cargo test feature=cfg_attribute
+        if: ${{ matrix.rust == 'nightly' }}
+        run: cargo test --features cfg_attribute
 
       - name: Run cargo doc
         if: ${{ matrix.rust == 'nightly' }}

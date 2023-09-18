@@ -216,7 +216,7 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
 fn evaluate_cfg_attribute(attrs: &[Attribute]) -> Result<bool, Error> {
     for attr in attrs {
         let ident = attr.path().get_ident().map(Ident::to_string);
-        if ident.as_ref().map(String::as_str) == Some("cfg") {
+        if ident.as_deref() == Some("cfg") {
             if let Meta::List(list) = &attr.meta {
                 let tokens = &list.tokens;
                 let cfg_macro: proc_macro::TokenStream = quote! { cfg!(#tokens) }.into();
