@@ -32,6 +32,7 @@ cfg_attribute = []
 
 [dev-dependencies]
 criterion = { version = "0.4.0", features = ["html_reports"] } # MIT or Apache-2.0
+phf = { version = "0.11", default-features = false, features = ["macros"] }
 
 [[bench]]
 name = "match"
