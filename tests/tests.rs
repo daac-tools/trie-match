@@ -203,6 +203,26 @@ fn test_slice_ref_numbers() {
     assert_eq!(f(&[0, 1]), 1);
 }
 
+#[test]
+fn test_binds() {
+    let f = |text| {
+        trie_match! {
+            match text {
+                x @ "abc" | x @ "def" => &x[1..],
+                y @ ("ghi" | "jkl") => &y[2..],
+                z @ "xyzw" => &z[3..],
+                w => &w[4..],
+            }
+        }
+    };
+    assert_eq!(f("abc"), "bc");
+    assert_eq!(f("def"), "ef");
+    assert_eq!(f("ghi"), "i");
+    assert_eq!(f("jkl"), "l");
+    assert_eq!(f("xyzw"), "w");
+    assert_eq!(f("abcdefg"), "efg");
+}
+
 #[cfg(feature = "cfg_attribute")]
 #[test]
 fn test_cfg_attribute() {

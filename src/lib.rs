@@ -19,13 +19,13 @@
 //!     match x {
 //!         "a" => 0,
 //!         "abc" => 1,
-//!         "abd" | "bcc" => 2,
+//!         pat @ ("abd" | "bcde") => pat.len(),
 //!         "bc" => 3,
 //!         _ => 4,
 //!     }
 //! };
 //!
-//! assert_eq!(result, 2);
+//! assert_eq!(result, 3);
 //! ```
 #![cfg_attr(
     feature = "cfg_attribute",
@@ -67,7 +67,6 @@ assert_eq!(result, 4);
 //! * Only supports strings, byte strings, and u8 slices as patterns.
 //! * The wildcard is evaluated last. (The normal `match` expression does not
 //!   match patterns after the wildcard.)
-//! * Pattern bindings are unavailable.
 //! * Guards are unavailable.
 
 mod trie;
@@ -79,8 +78,8 @@ use std::collections::HashMap;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input, spanned::Spanned, Arm, Error, Expr, ExprLit, ExprMatch, Lit, Pat, PatOr,
-    PatReference, PatSlice, PatWild,
+    parse_macro_input, spanned::Spanned, Arm, Error, Expr, ExprLit, ExprMatch, Lit, Pat, PatIdent,
+    PatOr, PatReference, PatSlice, PatWild,
 };
 
 #[cfg(feature = "cfg_attribute")]
@@ -97,6 +96,7 @@ static ERROR_GUARD_NOT_SUPPORTED: &str = "match guard not supported";
 static ERROR_UNREACHABLE_PATTERN: &str = "unreachable pattern";
 static ERROR_PATTERN_NOT_COVERED: &str = "non-exhaustive patterns: `_` not covered";
 static ERROR_EXPECTED_U8_LITERAL: &str = "expected `u8` integer literal";
+static ERROR_VARIABLE_NOT_MATCH: &str = "variable is not bound in all patterns";
 
 #[cfg(not(feature = "cfg_attribute"))]
 static ERROR_ATTRIBUTE_NOT_SUPPORTED_CFG: &str =
@@ -182,16 +182,62 @@ fn convert_reference_pattern(pat: &PatReference) -> Result<Option<Vec<u8>>, Erro
     }
 }
 
+struct PatternBytes {
+    /// Bound variable identifier.
+    ident: Option<PatIdent>,
+
+    /// Byte sequence of this pattern. `None` is for a wildcard.
+    bytes: Option<Vec<u8>>,
+}
+
+impl PatternBytes {
+    const fn new(ident: Option<PatIdent>, bytes: Option<Vec<u8>>) -> Self {
+        Self { ident, bytes }
+    }
+}
+
 /// Retrieves pattern strings from the given token.
 ///
 /// None indicates a wild card pattern (`_`).
-fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
-    let mut pats = vec![];
+fn retrieve_match_patterns(
+    pat: &Pat,
+    ident: Option<PatIdent>,
+    pat_bytes_set: &mut Vec<PatternBytes>,
+    pat_set: &mut Vec<Pat>,
+) -> Result<(), Error> {
     match pat {
-        Pat::Lit(pat) => pats.push(convert_literal_pattern(pat)?),
-        Pat::Slice(pat) => pats.push(convert_slice_pattern(pat)?),
-        Pat::Wild(pat) => pats.push(convert_wildcard_pattern(pat)?),
-        Pat::Reference(pat) => pats.push(convert_reference_pattern(pat)?),
+        Pat::Lit(lit) => {
+            pat_set.push(pat.clone());
+            pat_bytes_set.push(PatternBytes::new(ident, convert_literal_pattern(lit)?));
+        }
+        Pat::Slice(slice) => {
+            pat_set.push(pat.clone());
+            pat_bytes_set.push(PatternBytes::new(ident, convert_slice_pattern(slice)?));
+        }
+        Pat::Wild(pat) => {
+            pat_bytes_set.push(PatternBytes::new(ident, convert_wildcard_pattern(pat)?));
+        }
+        Pat::Reference(reference) => {
+            pat_set.push(pat.clone());
+            pat_bytes_set.push(PatternBytes::new(
+                ident,
+                convert_reference_pattern(reference)?,
+            ));
+        }
+        Pat::Ident(pat) => {
+            if let Some(attr) = pat.attrs.first() {
+                return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED));
+            }
+            let mut pat = pat.clone();
+            if let Some((_, subpat)) = pat.subpat.take() {
+                retrieve_match_patterns(&subpat, Some(pat), pat_bytes_set, pat_set)?;
+            } else {
+                pat_bytes_set.push(PatternBytes::new(Some(pat), None));
+            }
+        }
+        Pat::Paren(pat) => {
+            retrieve_match_patterns(&pat.pat, ident, pat_bytes_set, pat_set)?;
+        }
         Pat::Or(PatOr {
             attrs,
             leading_vert: None,
@@ -201,22 +247,14 @@ fn retrieve_match_patterns(pat: &Pat) -> Result<Vec<Option<Vec<u8>>>, Error> {
                 return Err(Error::new(attr.span(), ERROR_ATTRIBUTE_NOT_SUPPORTED));
             }
             for pat in cases {
-                match pat {
-                    Pat::Lit(pat) => pats.push(convert_literal_pattern(pat)?),
-                    Pat::Slice(pat) => pats.push(convert_slice_pattern(pat)?),
-                    Pat::Wild(pat) => pats.push(convert_wildcard_pattern(pat)?),
-                    Pat::Reference(pat) => pats.push(convert_reference_pattern(pat)?),
-                    _ => {
-                        return Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN));
-                    }
-                }
+                retrieve_match_patterns(pat, ident.clone(), pat_bytes_set, pat_set)?;
             }
         }
         _ => {
             return Err(Error::new(pat.span(), ERROR_UNEXPECTED_PATTERN));
         }
     }
-    Ok(pats)
+    Ok(())
 }
 
 #[cfg(feature = "cfg_attribute")]
@@ -245,12 +283,16 @@ struct MatchInfo {
     bodies: Vec<Expr>,
     pattern_map: HashMap<Vec<u8>, usize>,
     wildcard_idx: usize,
+    bound_vals: Vec<Option<PatIdent>>,
+    pat_set: Vec<Pat>,
 }
 
 fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
     let mut pattern_map = HashMap::new();
     let mut wildcard_idx = None;
+    let mut bound_vals = vec![];
     let mut bodies = vec![];
+    let mut pat_set = vec![];
     let mut i = 0;
     #[allow(clippy::explicit_counter_loop)]
     for Arm {
@@ -273,13 +315,21 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
         if let Some((if_token, _)) = guard {
             return Err(Error::new(if_token.span(), ERROR_GUARD_NOT_SUPPORTED));
         }
-        let pat_bytes_set = retrieve_match_patterns(&pat)?;
-        for pat_bytes in pat_bytes_set {
-            if let Some(pat_bytes) = pat_bytes {
-                if pattern_map.contains_key(&pat_bytes) {
+        let mut pat_bytes_set = vec![];
+        retrieve_match_patterns(&pat, None, &mut pat_bytes_set, &mut pat_set)?;
+        let bound_val = pat_bytes_set[0].ident.clone();
+        for PatternBytes { ident, bytes } in pat_bytes_set {
+            if ident != bound_val {
+                return Err(Error::new(
+                    ident.or(bound_val).unwrap().span(),
+                    ERROR_VARIABLE_NOT_MATCH,
+                ));
+            }
+            if let Some(bytes) = bytes {
+                if pattern_map.contains_key(&bytes) {
                     return Err(Error::new(pat.span(), ERROR_UNREACHABLE_PATTERN));
                 }
-                pattern_map.insert(pat_bytes, i);
+                pattern_map.insert(bytes, i);
             } else {
                 if wildcard_idx.is_some() {
                     return Err(Error::new(pat.span(), ERROR_UNREACHABLE_PATTERN));
@@ -287,6 +337,7 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
                 wildcard_idx.replace(i);
             }
         }
+        bound_vals.push(bound_val);
         bodies.push(*body);
         i += 1;
     }
@@ -297,6 +348,8 @@ fn parse_match_arms(arms: Vec<Arm>) -> Result<MatchInfo, Error> {
         bodies,
         pattern_map,
         wildcard_idx,
+        bound_vals,
+        pat_set,
     })
 }
 
@@ -308,6 +361,8 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
         bodies,
         pattern_map,
         wildcard_idx,
+        bound_vals,
+        pat_set,
     } = parse_match_arms(arms)?;
     let mut trie = Sparse::new();
     for (k, v) in pattern_map {
@@ -318,16 +373,19 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
     }
     let (bases, checks, outs) = trie.build_double_array_trie(wildcard_idx);
 
-    let base = bases.iter();
     let out_check = outs.iter().zip(checks).map(|(out, check)| {
         let out = format_ident!("V{out}");
         quote! { (__TrieMatchValue::#out, #check) }
     });
-    let arm = bodies.iter().enumerate().map(|(i, body)| {
-        let i = format_ident!("V{i}");
-        quote! { __TrieMatchValue::#i => #body }
-    });
-    let attr = attrs.iter();
+    let arm = bodies
+        .iter()
+        .zip(bound_vals)
+        .enumerate()
+        .map(|(i, (body, bound_val))| {
+            let i = format_ident!("V{i}");
+            let bound_val = bound_val.map_or_else(|| quote! { _ }, |val| quote! { #val });
+            quote! { (__TrieMatchValue::#i, #bound_val ) => #body }
+        });
     let enumvalue = (0..bodies.len()).map(|i| format_ident!("V{i}"));
     let wildcard_ident = format_ident!("V{wildcard_idx}");
     Ok(quote! {
@@ -336,25 +394,31 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
             enum __TrieMatchValue {
                 #( #enumvalue, )*
             }
-            #( #attr )*
-            match (|query: &[u8]| unsafe {
-                let bases: &'static [i32] = &[ #( #base, )* ];
-                let out_checks: &'static [(__TrieMatchValue, u8)] = &[ #( #out_check, )* ];
-                let mut pos = 0;
-                let mut base = bases[0];
-                for &b in query {
-                    pos = base.wrapping_add(i32::from(b)) as usize;
-                    if let Some((_, check)) = out_checks.get(pos) {
-                        if *check == b {
-                            base = *bases.get_unchecked(pos);
-                            continue;
+            #( #attrs )*
+            match #expr {
+                // This is for type inference.
+                query @ ( #( #pat_set | )* _) => {
+                    match (|query| unsafe {
+                        let query_ref = ::core::convert::AsRef::<[u8]>::as_ref(&query);
+                        let bases: &'static [i32] = &[ #( #bases, )* ];
+                        let out_checks: &'static [(__TrieMatchValue, u8)] = &[ #( #out_check, )* ];
+                        let mut pos = 0;
+                        let mut base = bases[0];
+                        for &b in query_ref {
+                            pos = base.wrapping_add(i32::from(b)) as usize;
+                            if let Some((_, check)) = out_checks.get(pos) {
+                                if *check == b {
+                                    base = *bases.get_unchecked(pos);
+                                    continue;
+                                }
+                            }
+                            return (__TrieMatchValue::#wildcard_ident, query);
                         }
+                        (out_checks.get_unchecked(pos).0, query)
+                    })(query) {
+                        #( #arm, )*
                     }
-                    return __TrieMatchValue::#wildcard_ident;
                 }
-                out_checks.get_unchecked(pos).0
-            })( ::core::convert::AsRef::<[u8]>::as_ref( #expr ) ) {
-                #( #arm, )*
             }
         }
     })
@@ -369,15 +433,17 @@ fn trie_match_inner(input: ExprMatch) -> Result<TokenStream, Error> {
 ///
 /// let x = "abd";
 ///
-/// trie_match! {
+/// let result = trie_match! {
 ///     match x {
-///         "a" => { println!("x"); }
-///         "abc" => { println!("y"); }
-///         "abd" | "bcc" => { println!("z"); }
-///         "bc" => { println!("w"); }
-///         _ => { println!(" "); }
+///         "a" => 0,
+///         "abc" => 1,
+///         pat @ ("abd" | "bcde") => pat.len(),
+///         "bc" => 3,
+///         _ => 4,
 ///     }
-/// }
+/// };
+///
+/// assert_eq!(result, 3);
 /// ```
 #[proc_macro]
 pub fn trie_match(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

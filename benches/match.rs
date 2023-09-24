@@ -273,7 +273,7 @@ fn criterion_word100(c: &mut Criterion) {
         b.iter(|| {
             let mut x = 0;
             for s in &word_100 {
-                trie_match!(match s {
+                trie_match!(match s.as_str() {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
                     | "intermarries" | "desideratum" | "evaluating" | "lavishing"
@@ -317,7 +317,7 @@ fn criterion_word100(c: &mut Criterion) {
         b.iter(|| {
             let mut x = 0;
             for s in &word_100 {
-                trie_match!(match s {
+                trie_match!(match s.as_str() {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
                     | "intermarries" | "desideratum" | "evaluating" | "lavishing"
@@ -361,7 +361,7 @@ fn criterion_word100(c: &mut Criterion) {
         b.iter(|| {
             let mut x = 0;
             for s in &word_100 {
-                trie_match!(match s {
+                trie_match!(match s.as_str() {
                     "stampeding" | "commendable" | "adrenaline" | "exobiology" | "indifference"
                     | "avuncular" | "prevailed" | "foreparts" | "legalistically"
                     | "intermarries" | "desideratum" | "evaluating" | "lavishing"
@@ -678,7 +678,7 @@ fn criterion_html_elements(c: &mut Criterion) {
         b.iter(|| {
             let mut x = 0;
             for s in &html_elements {
-                trie_match!(match s {
+                trie_match!(match s.as_str() {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
                     | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
@@ -719,7 +719,7 @@ fn criterion_html_elements(c: &mut Criterion) {
         b.iter(|| {
             let mut x = 0;
             for s in &html_elements {
-                trie_match!(match s {
+                trie_match!(match s.as_str() {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
                     | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {
@@ -760,7 +760,7 @@ fn criterion_html_elements(c: &mut Criterion) {
         b.iter(|| {
             let mut x = 0;
             for s in &html_elements {
-                trie_match!(match s {
+                trie_match!(match s.as_str() {
                     "bdo" | "rb" | "th" | "ul" | "pre" | "mark" | "em" | "search" | "head"
                     | "li" | "del" | "details" | "p" | "bdi" | "time" | "area" | "br" | "var"
                     | "aside" | "main" | "tfoot" | "hr" | "label" | "rp" | "menuitem" => {

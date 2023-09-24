@@ -19,15 +19,17 @@ use trie_match::trie_match;
 
 let x = "abd";
 
-trie_match! {
+let result = trie_match! {
     match x {
-        "a" => { println!("x"); }
-        "abc" => { println!("y"); }
-        "abd" | "bcc" => { println!("z"); }
-        "bc" => { println!("w"); }
-        _ => { println!(" "); }
+        "a" => 0,
+        "abc" => 1,
+        pat @ ("abd" | "bcc") => pat.bytes()[0],
+        "bc" => 3,
+        _ => 4,
     }
-}
+};
+
+assert_eq!(result, 3);
 ```
 
 ## Why is it faster?
@@ -37,15 +39,15 @@ equivalent to the following code:
 
 ```rust
 if x == "a" {
-    ..
+    0
 } else if x == "abc" {
-    ..
+    1
 } else if x == "abd" || x == "bcc" {
-    ..
+    x.bytes()[0]
 } else if x == "bc" {
-    ..
+    3
 } else {
-    ..
+    4
 }
 ```
 
@@ -89,7 +91,6 @@ The followings are different from the normal `match` expression:
 * Only supports strings, byte strings, and u8 slices as patterns.
 * The wildcard is evaluated last. (The normal `match` expression does not
   match patterns after the wildcard.)
-* Pattern bindings are unavailable.
 * Guards are unavailable.
 
 Sometimes the normal `match` expression is faster, depending on how
